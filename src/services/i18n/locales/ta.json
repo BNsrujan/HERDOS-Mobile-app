@@ -1,0 +1,12 @@
+{
+  "appName": "HerdOS",
+  "homeTitle": "Herd Overview",
+  "herdTitle": "Herd",
+  "mapTitle": "Field Map",
+  "alertsTitle": "Alerts",
+  "settingsTitle": "Settings",
+  "languageSelectTitle": "Choose Language",
+  "illnessDetectionTitle": "Illness Detection",
+  "geofenceIntroTitle": "Geofence Intro",
+  "animalDetailsTitle": "Animal Details"
+}

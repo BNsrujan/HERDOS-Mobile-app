@@ -1,18 +1,18 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 import ActivityTimelineBar from '@/components/animal-detail/activity-timeline-bar';
 import AlertHistoryItem from '@/components/animal-detail/alert-history-item';
 import CollarActions from '@/components/animal-detail/collar-actions';
+import LocateSheet, { type LocateSheetHandle } from '@/components/animal-detail/locate-sheet';
 import LocationCard from '@/components/animal-detail/location-card';
+import ShutdownSheet, { type ShutdownSheetHandle } from '@/components/animal-detail/shutdown-sheet';
 import VitalsRow from '@/components/animal-detail/vitals-row';
 import { getAvatarColor } from '@/components/herd/avatar';
 import StatusBadge from '@/components/herd/status-badge';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useLocateAnimal } from '@/hooks/mutations/use-locate-animal';
-import { useShutdownCollar } from '@/hooks/mutations/use-shutdown-collar';
 import { useActivityTimeline } from '@/hooks/queries/use-activity-timeline';
 import { useAnimalAlertHistory } from '@/hooks/queries/use-animal-alert-history';
 import { useAnimalDetail } from '@/hooks/queries/use-animal-detail';
@@ -21,11 +21,11 @@ export default function AnimalDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [expanded, setExpanded] = useState(true);
+  const locateSheetRef = useRef<LocateSheetHandle>(null);
+  const shutdownSheetRef = useRef<ShutdownSheetHandle>(null);
   const { data: animal, isLoading, isError, refetch } = useAnimalDetail(id);
   const { data: timelineData } = useActivityTimeline(id);
   const { data: alertHistory = [] } = useAnimalAlertHistory(id);
-  const locateMutation = useLocateAnimal();
-  const shutdownMutation = useShutdownCollar();
 
   const heroBackground = useMemo(() => (animal ? getAvatarColor(animal.name) : '#2563EB'), [animal]);
 
@@ -99,11 +99,9 @@ export default function AnimalDetailsScreen() {
         </View>
 
         <CollarActions
-          onLocate={() => locateMutation.mutate(animal.id)}
+          onLocatePress={() => locateSheetRef.current?.present()}
           onViewMap={handleViewOnMap}
-          onShutdown={() => shutdownMutation.mutate(animal.id)}
-          locating={locateMutation.isPending}
-          shuttingDown={shutdownMutation.isPending}
+          onShutdownPress={() => shutdownSheetRef.current?.present()}
         />
 
         <View style={styles.card}>
@@ -122,6 +120,13 @@ export default function AnimalDetailsScreen() {
           ) : null}
         </View>
       </ScrollView>
+
+      {animal ? (
+        <>
+          <LocateSheet ref={locateSheetRef} animalId={animal.id} animalName={animal.name} />
+          <ShutdownSheet ref={shutdownSheetRef} animalId={animal.id} animalName={animal.name} />
+        </>
+      ) : null}
     </ThemedView>
   );
 }

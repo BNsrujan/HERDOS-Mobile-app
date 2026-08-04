@@ -1,71 +1,45 @@
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 
-import LanguageCard from '@/components/onboarding/language-card';
+import LanguageGrid from '@/components/onboarding/language-grid';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useOnboardingStatus } from '@/hooks/use-onboarding-status';
 
-const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'hi', label: 'Hindi' },
-  { code: 'kn', label: 'Kannada' },
-  { code: 'mr', label: 'Marathi' },
-  { code: 'bn', label: 'Bengali' },
-  { code: 'te', label: 'Telugu' },
-  { code: 'ta', label: 'Tamil' },
-  { code: 'gu', label: 'Gujarati' },
-];
-
 export default function LanguageSelectScreen() {
   const { markOnboardingSeen } = useOnboardingStatus();
   const router = useRouter();
-  const selectedLanguage = useMemo(() => languages[0].code, []);
+  const selectedLanguage = useMemo(() => 'en', []);
 
-  async function handleSelect() {
+  async function handleSelect(code: string) {
     await markOnboardingSeen();
-    router.replace('/(auth)/login');
+    if (code) {
+      router.replace('/(auth)/login');
+    }
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
-      <ThemedView style={styles.header}>
-        <ThemedText type="title">Choose Language</ThemedText>
-        <ThemedText type="small">Select your preferred language to continue.</ThemedText>
-      </ThemedView>
+    <ThemedView style={styles.content}>
+      <ThemedText type="title">Choose Language</ThemedText>
+      <ThemedText type="small">Select your preferred language to continue.</ThemedText>
 
-      <View style={styles.list}>
-        {languages.map((language) => (
-          <LanguageCard
-            key={language.code}
-            label={language.label}
-            selected={language.code === selectedLanguage}
-            onSelect={handleSelect}
-          />
-        ))}
-      </View>
+      <LanguageGrid selectedLanguage={selectedLanguage} onSelect={handleSelect} />
 
-      <Pressable style={styles.continueButton} onPress={handleSelect}>
+      <Pressable style={styles.continueButton} onPress={() => handleSelect(selectedLanguage)}>
         <ThemedView style={styles.continueButtonInner}>
           <ThemedText type="link">Continue</ThemedText>
         </ThemedView>
       </Pressable>
-    </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    flexGrow: 1,
+    flex: 1,
     padding: 24,
     justifyContent: 'center',
-  },
-  header: {
-    gap: 12,
-    marginBottom: 24,
-  },
-  list: {
     gap: 12,
   },
   continueButton: {

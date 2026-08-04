@@ -1,8 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polygon, type LatLng, type Region } from 'react-native-maps';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import MapView, { Marker, Polygon, Polyline, type Region } from 'react-native-maps';
 
 import AllAnimalsSheet from '@/components/map/all-animals-sheet';
 import AnimalCallout from '@/components/map/animal-callout';
@@ -11,25 +11,35 @@ import FarmHeaderPill from '@/components/map/farm-header-pill';
 import MapActionButton from '@/components/map/map-action-button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { useCreateZone } from '@/hooks/mutations/use-create-zone';
+import { useUpdateZoneShape } from '@/hooks/mutations/use-update-zone-shape';
 import { useAnimalPositions } from '@/hooks/queries/use-animal-positions';
 import { useFarm } from '@/hooks/queries/use-farm';
 import { useRecentAnimals } from '@/hooks/queries/use-recent-animals';
-import { useUpdateGeofence } from '@/hooks/queries/use-update-geofence';
-import type { GeofencePoint } from '@/services/api/farm';
+import { useZones } from '@/hooks/queries/use-zones';
 import type { Animal } from '@/types/animal';
+import type { GeofencePoint } from '@/types/zone';
 
 export default function MapScreen() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const mapRef = useRef<MapView>(null);
   const { data: farm, isLoading: farmLoading, isError: farmError, refetch: refetchFarm } = useFarm();
   const { data: positions, isLoading: positionsLoading, isError: positionsError, refetch: refetchPositions } = useAnimalPositions();
   const { data: recentAnimals = [] } = useRecentAnimals(10);
-  const { focusAnimalId } = useLocalSearchParams<{ focusAnimalId?: string }>();
-  const updateGeofenceMutation = useUpdateGeofence();
+  const { data: zones = [] } = useZones();
+  const { editZoneId, createZone, focusAnimalId, focusZoneId } = useLocalSearchParams<{
+    editZoneId?: string;
+    createZone?: string;
+    focusAnimalId?: string;
+    focusZoneId?: string;
+  }>();
+  const createZoneMutation = useCreateZone();
+  const updateZoneShapeMutation = useUpdateZoneShape();
   const [selectedAnimalId, setSelectedAnimalId] = useState<string | null>(null);
-  const [isEditingFence, setIsEditingFence] = useState(false);
   const [draftPoints, setDraftPoints] = useState<GeofencePoint[]>([]);
-  const [sheetIndex, setSheetIndex] = useState(0);
+  const [nameModalVisible, setNameModalVisible] = useState(false);
+  const [zoneName, setZoneName] = useState('');
 
   const initialRegion = useMemo<Region | undefined>(() => {
     if (!farm) {
@@ -71,56 +81,6 @@ export default function MapScreen() {
     await Promise.all([refetchPositions(), refetchFarm()]);
   }, [queryClient, refetchFarm, refetchPositions]);
 
-  const handleStartEditingFence = useCallback(() => {
-    if (!farm?.geofence?.length) {
-      return;
-    }
-
-    setIsEditingFence(true);
-    setSheetIndex(0);
-    setDraftPoints(farm.geofence.map((point) => ({ ...point })));
-  }, []);
-
-  const handleCancelEdit = useCallback(() => {
-    setIsEditingFence(false);
-    setDraftPoints([]);
-    setSheetIndex(0);
-  }, []);
-
-  const handleSaveFence = useCallback(() => {
-    if (!draftPoints.length) {
-      return;
-    }
-
-    updateGeofenceMutation.mutate(draftPoints, {
-      onSuccess: () => {
-        setIsEditingFence(false);
-        setDraftPoints([]);
-        setSheetIndex(0);
-      },
-    });
-  }, [draftPoints, updateGeofenceMutation]);
-
-  const handleVertexDrag = useCallback((index: number, coordinate: LatLng) => {
-    setDraftPoints((current) => current.map((point, pointIndex) => (pointIndex === index ? { lat: coordinate.latitude, lng: coordinate.longitude } : point)));
-  }, []);
-
-  const handleMapLongPress = useCallback((event: { nativeEvent: { coordinate: LatLng } }) => {
-    if (!isEditingFence || draftPoints.length < 3) {
-      return;
-    }
-
-    const { coordinate } = event.nativeEvent;
-    const target = { lat: coordinate.latitude, lng: coordinate.longitude };
-    const distances = draftPoints.map((point) => Math.hypot(point.lat - target.lat, point.lng - target.lng));
-    const nearestIndex = distances.indexOf(Math.min(...distances));
-    const nextIndex = (nearestIndex + 1) % draftPoints.length;
-    const insertIndex = Math.min(nearestIndex, nextIndex) + 1;
-    const inserted = [...draftPoints];
-    inserted.splice(insertIndex, 0, target);
-    setDraftPoints(inserted);
-  }, [draftPoints, isEditingFence]);
-
   const handleSelectAnimal = useCallback(
     (animal: Animal) => {
       const position = positions?.find((entry) => entry.animalId === animal.id);
@@ -142,11 +102,65 @@ export default function MapScreen() {
     [positions]
   );
 
+  const handleAddDraftPoint = useCallback((coordinate: GeofencePoint) => {
+    setDraftPoints((current) => [...current, coordinate]);
+  }, []);
+
+  const handleCancelDraft = useCallback(() => {
+    setDraftPoints([]);
+    setZoneName('');
+    router.replace('/zones' as never);
+  }, [router]);
+
+  const handleSaveEdit = useCallback(() => {
+    if (!editZoneId || !draftPoints.length) {
+      return;
+    }
+
+    updateZoneShapeMutation.mutate(
+      { id: editZoneId, points: draftPoints },
+      { onSuccess: () => router.replace('/zones' as never) },
+    );
+  }, [draftPoints, editZoneId, router, updateZoneShapeMutation]);
+
+  const handleSaveCreate = useCallback(() => {
+    if (draftPoints.length < 3 || !zoneName.trim()) {
+      return;
+    }
+
+    createZoneMutation.mutate(
+      { name: zoneName.trim(), points: draftPoints },
+      { onSuccess: () => router.replace('/zones' as never) },
+    );
+  }, [createZoneMutation, draftPoints, router, zoneName]);
+
   useEffect(() => {
     if (!selectedAnimalId && positions?.length) {
       setSelectedAnimalId(positions[0].animalId);
     }
   }, [positions, selectedAnimalId]);
+
+  useEffect(() => {
+    if (!editZoneId || !zones.length) {
+      return;
+    }
+
+    const targetZone = zones.find((zone) => zone.id === editZoneId);
+
+    if (!targetZone) {
+      return;
+    }
+
+    setDraftPoints(targetZone.points.map((point) => ({ ...point })));
+  }, [editZoneId, zones]);
+
+  useEffect(() => {
+    if (createZone !== 'true') {
+      setDraftPoints([]);
+      setZoneName('');
+      setNameModalVisible(false);
+    }
+  }, [createZone]);
 
   useEffect(() => {
     if (!focusAnimalId || !positions?.length) {
@@ -172,6 +186,36 @@ export default function MapScreen() {
     );
   }, [focusAnimalId, positions]);
 
+  useEffect(() => {
+    if (!focusZoneId || !zones.length) {
+      return;
+    }
+
+    const targetId = Array.isArray(focusZoneId) ? focusZoneId[0] : focusZoneId;
+    const targetZone = zones.find((zone) => zone.id === targetId);
+
+    if (!targetZone?.points.length) {
+      return;
+    }
+
+    const latitudes = targetZone.points.map((point) => point.lat);
+    const longitudes = targetZone.points.map((point) => point.lng);
+    const minLat = Math.min(...latitudes);
+    const maxLat = Math.max(...latitudes);
+    const minLng = Math.min(...longitudes);
+    const maxLng = Math.max(...longitudes);
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude: (minLat + maxLat) / 2,
+        longitude: (minLng + maxLng) / 2,
+        latitudeDelta: Math.max((maxLat - minLat) * 1.6, 0.02),
+        longitudeDelta: Math.max((maxLng - minLng) * 1.6, 0.02),
+      },
+      400,
+    );
+  }, [focusZoneId, zones]);
+
   if (farmLoading || positionsLoading) {
     return (
       <ThemedView style={styles.container}>
@@ -191,6 +235,9 @@ export default function MapScreen() {
     );
   }
 
+  const isDraftMode = Boolean(editZoneId || createZone === 'true');
+  const canSaveCreate = draftPoints.length >= 3;
+
   return (
     <ThemedView style={styles.container}>
       <MapView
@@ -199,33 +246,98 @@ export default function MapScreen() {
         style={styles.map}
         mapType="satellite"
         initialRegion={initialRegion}
-        onLongPress={handleMapLongPress}
+        onPress={(event) => {
+          if (createZone !== 'true') {
+            return;
+          }
+
+          handleAddDraftPoint({
+            lat: event.nativeEvent.coordinate.latitude,
+            lng: event.nativeEvent.coordinate.longitude,
+          });
+        }}
+        onLongPress={(event) => {
+          if (!editZoneId || draftPoints.length < 2) {
+            return;
+          }
+
+          const target = {
+            lat: event.nativeEvent.coordinate.latitude,
+            lng: event.nativeEvent.coordinate.longitude,
+          };
+
+          const nearestIndex = draftPoints.reduce((bestIndex, point, index) => {
+            const bestDistance = draftPoints[bestIndex] ? Math.hypot(point.lat - target.lat, point.lng - target.lng) : Number.POSITIVE_INFINITY;
+            const currentDistance = Math.hypot(point.lat - target.lat, point.lng - target.lng);
+            return currentDistance < bestDistance ? index : bestIndex;
+          }, 0);
+
+          const nextIndex = (nearestIndex + 1) % draftPoints.length;
+          const insertIndex = Math.min(nearestIndex, nextIndex) + 1;
+          const inserted = [...draftPoints];
+          inserted.splice(insertIndex, 0, target);
+          setDraftPoints(inserted);
+        }}
       >
-        {draftPoints.length ? (
-          <Polygon
+        {zones.filter((zone) => zone.active).map((zone) => (
+          <View key={zone.id}>
+            <Polygon
+              coordinates={zone.points.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
+              strokeColor={editZoneId === zone.id ? '#0F766E' : '#14B8A6'}
+              fillColor={editZoneId === zone.id ? 'rgba(15,118,110,0.18)' : 'rgba(20,184,166,0.2)'}
+              strokeWidth={2}
+              tappable={false}
+            />
+            {zone.points.map((point, index) => (
+              <Marker key={`${zone.id}-${index}`} coordinate={{ latitude: point.lat, longitude: point.lng }}>
+                <View style={styles.vertexMarker} />
+              </Marker>
+            ))}
+          </View>
+        ))}
+
+        {editZoneId && draftPoints.length ? (
+          <>
+            <Polygon
+              coordinates={draftPoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
+              strokeColor="#0F766E"
+              fillColor="rgba(15,118,110,0.18)"
+              strokeWidth={2}
+            />
+            {draftPoints.map((point, index) => (
+              <Marker
+                key={`draft-${index}`}
+                coordinate={{ latitude: point.lat, longitude: point.lng }}
+                draggable
+                onDragEnd={(event) => {
+                  const nextPoints = [...draftPoints];
+                  nextPoints[index] = {
+                    lat: event.nativeEvent.coordinate.latitude,
+                    lng: event.nativeEvent.coordinate.longitude,
+                  };
+                  setDraftPoints(nextPoints);
+                }}
+              >
+                <View style={styles.vertexMarker} />
+              </Marker>
+            ))}
+          </>
+        ) : null}
+
+        {createZone === 'true' && draftPoints.length > 1 ? (
+          <Polyline
             coordinates={draftPoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
-            strokeColor="#14B8A6"
-            fillColor="rgba(20,184,166,0.2)"
-            strokeWidth={2}
-          />
-        ) : farm.geofence?.length ? (
-          <Polygon
-            coordinates={farm.geofence.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
-            strokeColor="#14B8A6"
-            fillColor="rgba(20,184,166,0.2)"
+            strokeColor="#0F766E"
             strokeWidth={2}
           />
         ) : null}
-        {(isEditingFence ? draftPoints : farm.geofence)?.map((point, index) => (
-          <Marker
-            key={`${isEditingFence ? 'draft' : 'vertex'}-${index}`}
-            coordinate={{ latitude: point.lat, longitude: point.lng }}
-            draggable={isEditingFence}
-            onDragEnd={(event) => handleVertexDrag(index, event.nativeEvent.coordinate)}
-          >
+
+        {createZone === 'true' && draftPoints.map((point, index) => (
+          <Marker key={`create-${index}`} coordinate={{ latitude: point.lat, longitude: point.lng }}>
             <View style={styles.vertexMarker} />
           </Marker>
         ))}
+
         {positions?.map((position) => (
           <AnimalMarker key={position.animalId} position={position} onPress={() => setSelectedAnimalId(position.animalId)} />
         ))}
@@ -241,19 +353,85 @@ export default function MapScreen() {
       <View style={styles.actionStack}>
         <MapActionButton icon="crosshair" onPress={handleRecenter} />
         <MapActionButton icon="refresh" onPress={handleRefresh} />
-        <MapActionButton icon="pencil" onPress={handleStartEditingFence} />
+        <MapActionButton icon="fence" onPress={() => router.push('/zones' as never)} />
       </View>
 
-      {isEditingFence ? (
-        <View style={styles.editActions}>
-          <Pressable style={styles.actionButton} onPress={handleSaveFence}>
-            <ThemedText type="smallBold" style={styles.actionButtonText}>Save</ThemedText>
-          </Pressable>
-          <Pressable style={styles.actionButton} onPress={handleCancelEdit}>
-            <ThemedText type="smallBold" style={styles.actionButtonText}>Cancel</ThemedText>
-          </Pressable>
+      {isDraftMode ? (
+        <View style={styles.draftActions}>
+          {createZone === 'true' ? (
+            <>
+              <Pressable
+                style={[styles.actionButton, draftPoints.length === 0 && styles.actionButtonDisabled]}
+                disabled={draftPoints.length === 0}
+                onPress={() => setDraftPoints((current) => current.slice(0, -1))}
+              >
+                <ThemedText type="smallBold" style={styles.actionButtonText}>Undo last point</ThemedText>
+              </Pressable>
+              <Pressable
+                style={[styles.actionButton, !canSaveCreate && styles.actionButtonDisabled]}
+                disabled={!canSaveCreate || createZoneMutation.isPending}
+                onPress={() => setNameModalVisible(true)}
+              >
+                <ThemedText type="smallBold" style={styles.actionButtonText}>
+                  {createZoneMutation.isPending ? 'Saving…' : 'Name & Save'}
+                </ThemedText>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable style={styles.actionButton} onPress={handleCancelDraft}>
+                <ThemedText type="smallBold" style={styles.actionButtonText}>Cancel</ThemedText>
+              </Pressable>
+              <Pressable
+                style={[styles.actionButton, updateZoneShapeMutation.isPending && styles.actionButtonDisabled]}
+                disabled={updateZoneShapeMutation.isPending}
+                onPress={handleSaveEdit}
+              >
+                <ThemedText type="smallBold" style={styles.actionButtonText}>
+                  {updateZoneShapeMutation.isPending ? 'Saving…' : 'Save'}
+                </ThemedText>
+              </Pressable>
+            </>
+          )}
+          {createZone === 'true' ? (
+            <Pressable style={styles.actionButton} onPress={handleCancelDraft}>
+              <ThemedText type="smallBold" style={styles.actionButtonText}>Cancel</ThemedText>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
+
+      <Modal visible={nameModalVisible} transparent animationType="slide">
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <ThemedText type="subtitle">Name this zone</ThemedText>
+            <TextInput
+              value={zoneName}
+              onChangeText={setZoneName}
+              placeholder="Zone name"
+              style={styles.input}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <Pressable style={styles.modalButton} onPress={() => setNameModalVisible(false)}>
+                <ThemedText type="smallBold">Cancel</ThemedText>
+              </Pressable>
+              <Pressable
+                style={[styles.modalButton, styles.modalButtonPrimary, !zoneName.trim() && styles.actionButtonDisabled]}
+                disabled={!zoneName.trim() || createZoneMutation.isPending}
+                onPress={() => {
+                  setNameModalVisible(false);
+                  handleSaveCreate();
+                }}
+              >
+                <ThemedText type="smallBold" style={styles.actionButtonText}>
+                  {createZoneMutation.isPending ? 'Saving…' : 'Save'}
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <AllAnimalsSheet animals={recentAnimals} onSelect={handleSelectAnimal} />
     </ThemedView>
@@ -290,14 +468,65 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 12,
   },
+  draftActions: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 104,
+    zIndex: 5,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   actionButton: {
+    flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: '#111827',
+    alignItems: 'center',
+  },
+  actionButtonDisabled: {
+    opacity: 0.5,
   },
   actionButtonText: {
     color: '#FFFFFF',
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: 'rgba(17, 24, 39, 0.35)',
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    gap: 12,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#E5E7EB',
+  },
+  modalButtonPrimary: {
+    backgroundColor: '#111827',
   },
   vertexMarker: {
     width: 8,

@@ -2,7 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 
-export type IconSymbolName = 'crosshair' | 'refresh' | 'pencil';
+export type IconSymbolName = 'crosshair' | 'refresh' | 'fence';
 
 type MapActionButtonProps = {
   icon: IconSymbolName;
@@ -12,7 +12,7 @@ type MapActionButtonProps = {
 const iconMap: Record<IconSymbolName, string> = {
   crosshair: '⌖',
   refresh: '↻',
-  pencil: '✎',
+  fence: '▦',
 };
 
 export default function MapActionButton({ icon, onPress }: MapActionButtonProps) {

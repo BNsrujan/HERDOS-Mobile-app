@@ -1,10 +1,14 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.herdos.app';
 
 async function request<T>(path: string, init: RequestInit = {}) {
+  const token = await AsyncStorage.getItem('herdos:authToken');
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...init,
   });

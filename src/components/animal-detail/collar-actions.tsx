@@ -1,37 +1,24 @@
-import { ActivityIndicator, Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 
 type CollarActionsProps = {
-  onLocate: () => void;
+  onLocatePress: () => void;
   onViewMap: () => void;
-  onShutdown: () => void;
-  locating: boolean;
-  shuttingDown: boolean;
+  onShutdownPress: () => void;
 };
 
-export default function CollarActions({ onLocate, onViewMap, onShutdown, locating, shuttingDown }: CollarActionsProps) {
-  const confirmShutdown = () => {
-    Alert.alert(
-      'Shut down Rani\'s collar?',
-      'This stops all tracking and alerts until manually restarted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Shut down', style: 'destructive', onPress: onShutdown },
-      ],
-    );
-  };
-
+export default function CollarActions({ onLocatePress, onViewMap, onShutdownPress }: CollarActionsProps) {
   return (
     <View style={styles.row}>
-      <Pressable onPress={onLocate} disabled={locating} style={[styles.button, styles.primaryButton]}>
-        {locating ? <ActivityIndicator color="#fff" /> : <ThemedText type="smallBold" style={styles.buttonText}>🔊 Locate by Sound and light</ThemedText>}
+      <Pressable onPress={onLocatePress} style={[styles.button, styles.primaryButton]}>
+        <ThemedText type="smallBold" style={styles.buttonText}>🔊 Locate by Sound and light</ThemedText>
       </Pressable>
       <Pressable onPress={onViewMap} style={[styles.button, styles.mapButton]}>
         <ThemedText type="smallBold" style={styles.mapButtonText}>🗺️ View on Map</ThemedText>
       </Pressable>
-      <Pressable onPress={confirmShutdown} disabled={shuttingDown} style={[styles.button, styles.secondaryButton]}>
-        {shuttingDown ? <ActivityIndicator color="#dc2626" /> : <ThemedText type="smallBold" style={styles.secondaryButtonText}>⏻ Shutdown Collar</ThemedText>}
+      <Pressable onPress={onShutdownPress} style={[styles.button, styles.secondaryButton]}>
+        <ThemedText type="smallBold" style={styles.secondaryButtonText}>⏻ Shutdown Collar</ThemedText>
       </Pressable>
     </View>
   );

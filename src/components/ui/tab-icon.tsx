@@ -1,10 +1,11 @@
 import { SymbolView } from 'expo-symbols';
+import type { ColorValue } from 'react-native';
 
 export type TabIconName = 'home' | 'herd' | 'map' | 'alerts' | 'settings';
 
 type TabIconProps = {
   name: TabIconName;
-  color: string;
+  color: ColorValue;
   size: number;
 };
 
@@ -17,5 +18,6 @@ const iconNameMap: Record<TabIconName, { ios: string; android: string; web: stri
 };
 
 export default function TabIcon({ name, color, size }: TabIconProps) {
-  return <SymbolView name={iconNameMap[name]} tintColor={color} size={size} />;
+  // cast name map to any to satisfy stricter SymbolView typings
+  return <SymbolView name={iconNameMap[name] as any} tintColor={color as any} size={size} />;
 }

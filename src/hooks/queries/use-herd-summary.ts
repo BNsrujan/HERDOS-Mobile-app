@@ -1,18 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { getHerdSummary } from '@/services/api/animals';
+import { getAnimalSummary } from '@/services/api/animals';
 
 export type HerdSummary = {
-  total: number;
   healthy: number;
   watch: number;
-  alerts: number;
+  alert: number;
 };
 
 export function useHerdSummary() {
   return useQuery<HerdSummary, Error>({
     queryKey: ['herd-summary'],
-    queryFn: getHerdSummary,
+    queryFn: getAnimalSummary,
     staleTime: 1000 * 60 * 5,
   });
 }

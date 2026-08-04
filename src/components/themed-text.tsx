@@ -32,6 +32,8 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
 const styles = StyleSheet.create({
   small: {
+    //TODO: add a font family  
+    
     fontSize: 14,
     lineHeight: 20,
     fontWeight: 500,

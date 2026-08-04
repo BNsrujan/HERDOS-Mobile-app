@@ -17,7 +17,7 @@ export default function IllnessDetectionScreen() {
           <ThemedText type="subtitle">Skip</ThemedText>
         </Pressable>
         <Pressable style={styles.primaryButton} onPress={() => router.push('/onboarding/geofence-intro')}>
-          <ThemedText type="subtitle">Next</ThemedText>
+          <ThemedText type="link">Next</ThemedText>
         </Pressable>
       </View>
     </ThemedView>

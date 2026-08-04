@@ -14,7 +14,7 @@ export default function GeofenceIntroScreen() {
       <ThemedText type="small">Set up geofences to keep the herd safe and receive instant entry alerts.</ThemedText>
       <View style={styles.actions}>
         <Pressable style={styles.primaryButton} onPress={() => router.push('/onboarding/language-select')}>
-          <ThemedText type="subtitle">Next</ThemedText>
+          <ThemedText type="link">Next</ThemedText>
         </Pressable>
       </View>
     </ThemedView>

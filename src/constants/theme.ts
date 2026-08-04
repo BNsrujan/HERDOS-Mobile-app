@@ -5,6 +5,7 @@
 
 import '@/global.css';
 
+import type { AnimalStatus } from '@/types/animal';
 import { Platform } from 'react-native';
 
 export const Colors = {
@@ -64,9 +65,31 @@ export const Spacing = {
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
 
-export const StatusColors = {
+export const StatusColors: Record<AnimalStatus, string> = {
   healthy: '#22C55E',
   watch: '#F5A524',
   alert: '#EF4444',
   lame: '#F43F5E',
-} as const;
+  milking: '#3B82F6',
+  pregnant: '#A855F7',
+};
+
+export const StatusLabels: Record<AnimalStatus, string> = {
+  healthy: 'Healthy',
+  watch: 'Watch',
+  alert: 'Alert',
+  lame: 'Lame',
+  milking: 'Milking',
+  pregnant: 'Pregnant',
+};
+
+export const AvatarColors = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#0F766E'] as const;
+
+export const MapStatusColors: Record<AnimalStatus, string> = {
+  healthy: StatusColors.healthy,
+  milking: StatusColors.healthy,
+  pregnant: StatusColors.healthy,
+  watch: StatusColors.watch,
+  alert: StatusColors.alert,
+  lame: StatusColors.alert,
+};

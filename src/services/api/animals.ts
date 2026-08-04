@@ -1,16 +1,62 @@
-import { apiFetch } from './client';
+import type { ActivitySegment, Animal, AnimalDetail, AnimalPosition, AnimalStatus } from '@/types/animal';
+import { apiGet, apiPatch, apiPost } from './client';
 
-import type { Animal } from '@/types/animal';
-import type { HerdSummary } from '@/hooks/queries/use-herd-summary';
+export function getAnimals(params: { status?: AnimalStatus | 'all'; search?: string; sort?: 'recent'; limit?: number }) {
+  const query = new URLSearchParams();
 
-export async function getHerd() {
-  return apiFetch<Animal[]>('/herd');
+  if (params.status && params.status !== 'all') {
+    query.append('status', params.status);
+  }
+
+  if (params.search) {
+    query.append('search', params.search);
+  }
+
+  if (params.sort) {
+    query.append('sort', params.sort);
+  }
+
+  if (typeof params.limit === 'number') {
+    query.append('limit', `${params.limit}`);
+  }
+
+  return apiGet<Animal[]>(`/animals${query.toString() ? `?${query.toString()}` : ''}`);
 }
 
-export async function getAnimal(id: string) {
-  return apiFetch<Animal>(`/animals/${id}`);
+export function getAnimalSummary() {
+  return apiGet<{ healthy: number; watch: number; alert: number }>('/animals/summary');
 }
 
-export async function getHerdSummary() {
-  return apiFetch<HerdSummary>('/herd/summary');
+export function getAnimal(id: string) {
+  return apiGet<AnimalDetail>(`/animals/${id}`);
+}
+
+export function getActivityTimeline(animalId: string, date?: string) {
+  const query = new URLSearchParams();
+
+  if (date) {
+    query.append('date', date);
+  }
+
+  return apiGet<{ segments: ActivitySegment[] }>(`/animals/${animalId}/activity-timeline${query.toString() ? `?${query.toString()}` : ''}`);
+}
+
+export function locateAnimal(animalId: string) {
+  return apiPost<{ success: boolean }>(`/animals/${animalId}/locate`, {});
+}
+
+export function shutdownCollar(animalId: string) {
+  return apiPost<{ success: boolean }>(`/animals/${animalId}/shutdown-collar`, {});
+}
+
+export function getRecentAnimals(limit?: number) {
+  return getAnimals({ sort: 'recent', limit });
+}
+
+export function getAnimalPositions() {
+  return apiGet<AnimalPosition[]>('/animals/positions');
+}
+
+export function acknowledgeAnimal(id: string) {
+  return apiPatch<Animal>(`/animals/${id}`, { acknowledged: true });
 }

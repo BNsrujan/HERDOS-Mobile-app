@@ -1,9 +1,10 @@
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://example.com';
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.herdos.app';
 
-export async function apiFetch<T>(path: string, init?: RequestInit) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+async function request<T>(path: string, init: RequestInit = {}) {
+  const response = await fetch(`${BASE_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
     ...init,
   });
@@ -13,4 +14,20 @@ export async function apiFetch<T>(path: string, init?: RequestInit) {
   }
 
   return (await response.json()) as T;
+}
+
+export function apiGet<T>(path: string) {
+  return request<T>(path, { method: 'GET' });
+}
+
+export function apiPost<T>(path: string, body: unknown) {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function apiPut<T>(path: string, body: unknown) {
+  return request<T>(path, { method: 'PUT', body: JSON.stringify(body) });
+}
+
+export function apiPatch<T>(path: string, body: unknown) {
+  return request<T>(path, { method: 'PATCH', body: JSON.stringify(body) });
 }

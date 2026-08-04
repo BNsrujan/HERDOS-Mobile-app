@@ -1,10 +1,10 @@
+import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
 
+import LanguageCard from '@/components/onboarding/language-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import LanguageCard from '@/components/onboarding/language-card';
 import { useOnboardingStatus } from '@/hooks/use-onboarding-status';
 
 const languages = [
@@ -25,7 +25,7 @@ export default function LanguageSelectScreen() {
 
   async function handleSelect() {
     await markOnboardingSeen();
-    router.replace('/(tabs)');
+    router.replace('/(auth)/login');
   }
 
   return (
@@ -48,7 +48,7 @@ export default function LanguageSelectScreen() {
 
       <Pressable style={styles.continueButton} onPress={handleSelect}>
         <ThemedView style={styles.continueButtonInner}>
-          <ThemedText type="subtitle">Continue</ThemedText>
+          <ThemedText type="link">Continue</ThemedText>
         </ThemedView>
       </Pressable>
     </ScrollView>

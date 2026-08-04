@@ -1,24 +1,41 @@
-import { useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { useOnboardingStatus } from '@/hooks/use-onboarding-status';
 
 export default function IndexScreen() {
-  const { hasSeenOnboarding } = useOnboardingStatus();
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (hasSeenOnboarding === null) {
+    async function initialize() {
+      const seen = await AsyncStorage.getItem('herdos:onboardingSeen');
+      const logged = await AsyncStorage.getItem('herdos:loggedIn');
+      setHasSeenOnboarding(seen === 'true');
+      setIsLoggedIn(logged === 'true');
+    }
+
+    initialize();
+  }, []);
+
+  useEffect(() => {
+    if (hasSeenOnboarding === null || isLoggedIn === null) {
       return;
     }
 
-    router.replace(hasSeenOnboarding ? '/(tabs)' : '/onboarding');
-  }, [hasSeenOnboarding, router]);
+    if (!hasSeenOnboarding) {
+      router.replace('/onboarding');
+      return;
+    }
 
-  if (hasSeenOnboarding === null) {
+    router.replace(isLoggedIn ? '/(tabs)' : '/(auth)/login');
+  }, [hasSeenOnboarding, isLoggedIn, router]);
+
+  if (hasSeenOnboarding === null || isLoggedIn === null) {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title">Preparing HerdOS…</ThemedText>

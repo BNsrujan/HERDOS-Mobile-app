@@ -42,6 +42,9 @@ export default function VerifyOtpScreen() {
       const authName = await AsyncStorage.getItem('herdos:authName');
       const res = await verifyOtp({ phone, otp: otp.trim(), name: authName || undefined });
       if (res.verified) {
+        if (res.token) {
+          await AsyncStorage.setItem('herdos:authToken', res.token);
+        }
         await AsyncStorage.setItem('herdos:loggedIn', 'true');
         router.replace('/(tabs)');
       } else {

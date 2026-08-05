@@ -12,7 +12,7 @@ export async function checkPhone(payload: { name?: string; phone: string }) {
 }
 
 export async function verifyOtp(payload: { phone: string; otp: string; name?: string }) {
-  return apiPost<{ verified: boolean }>('/auth/verify-otp', payload);
+  return apiPost<{ verified: boolean; token?: string; user?: User }>('/auth/verify-otp', payload);
 }
 
 export async function getUserByPhone(phone: string) {

@@ -28,13 +28,7 @@ export default function Login() {
       const res = await checkPhone({ name: name.trim() || undefined, phone });
       await AsyncStorage.setItem('herdos:authPhone', phone);
       await AsyncStorage.setItem('herdos:authName', name.trim());
-
-      if (res.exists && res.verified) {
-        await AsyncStorage.setItem('herdos:loggedIn', 'true');
-        router.replace('/(tabs)');
-      } else {
-        router.push('./verify-otp');
-      }
+      router.push('./verify-otp');
     } catch (err) {
       console.error('login error', err);
       setError('Unable to submit login. Please try again.');

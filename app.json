@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Herdos_mobile_app",
-    "slug": "Herdos_mobile_app",
+    "name": "Herdos",
+    "slug": "Herdos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.svg",
-    "scheme": "herdosmobileapp",
+    "scheme": "herdos",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"

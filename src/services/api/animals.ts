@@ -46,7 +46,12 @@ export function locateAnimal(animalId: string) {
 }
 
 export function shutdownCollar(animalId: string) {
-  return apiPost<{ success: boolean }>(`/animals/${animalId}/shutdown-collar`, {});
+  return apiPost<{ success: boolean; error?: string }>(`/animals/${animalId}/shutdown-collar`, {}).then((payload) => {
+    if (!payload.success) {
+      throw new Error(payload.error || 'shutdown request failed');
+    }
+    return payload;
+  });
 }
 
 export function getRecentAnimals(limit?: number) {

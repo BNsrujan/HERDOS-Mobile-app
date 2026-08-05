@@ -26,7 +26,7 @@ void i18n.use(initReactI18next).init({
   compatibilityJSON: 'v3',
   resources,
   fallbackLng: 'en',
-  lng: Localization.locale.split('-')[0],
+  lng: typeof Localization.locale === 'string' ? Localization.locale.split('-')[0] : 'en',
   interpolation: {
     escapeValue: false,
   },

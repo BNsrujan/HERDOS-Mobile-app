@@ -8,6 +8,7 @@ import ZoneCard from '@/components/zones/zone-card';
 import { useToggleZone } from '@/hooks/mutations/use-toggle-zone';
 import { useDangerZones } from '@/hooks/queries/use-danger-zones';
 import { useZones } from '@/hooks/queries/use-zones';
+import Icon from '@/components/ui/icon';
 
 export default function ZonesScreen() {
   const router = useRouter();
@@ -85,7 +86,7 @@ export default function ZonesScreen() {
       </ScrollView>
 
       <Pressable style={styles.fab} onPress={() => router.push('/(tabs)/map?createZone=true')}>
-        <ThemedText type="smallBold" style={styles.fabText}>+</ThemedText>
+        <Icon name="plus" color="#FFFFFF" size={28} />
       </Pressable>
     </ThemedView>
   );

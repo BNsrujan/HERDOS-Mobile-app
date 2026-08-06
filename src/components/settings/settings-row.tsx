@@ -21,7 +21,7 @@ export default function SettingsRow({ icon, label, right, onPress, chevron = fal
       </View>
       <View style={styles.right}>
         {right}
-        {chevron ? <ThemedText type="smallBold" style={styles.chevron}>›</ThemedText> : null}
+        {chevron ? <Icon name="chevron-right" color="#6B7280" size={18} /> : null}
       </View>
     </Pressable>
   );

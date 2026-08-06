@@ -9,6 +9,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing, StatusColors } from '@/constants/theme';
 import { useHerd } from '@/hooks/queries/use-herd';
 import type { AnimalStatus } from '@/types/animal';
+import Icon from '@/components/ui/icon';
 
 const initialStatus: AnimalStatus | 'all' = 'all';
 
@@ -59,7 +60,7 @@ export default function HerdScreen() {
       )}
 
       <Pressable style={styles.fab} onPress={() => router.push('/animal/new')}>
-        <ThemedText type="title" style={styles.fabText}>+</ThemedText>
+        <Icon name="plus" color="#FFFFFF" size={24} />
       </Pressable>
     </ThemedView>
   );
@@ -86,7 +87,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   list: {
-    paddingBottom: 120,
+    // paddingBottom: 120,
   },
   centered: {
     flex: 1,

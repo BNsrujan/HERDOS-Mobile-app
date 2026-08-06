@@ -9,15 +9,18 @@ export default function OnboardingScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <Image source={require('@/assets/welcoming/welcome1.png')} style={styles.image} />
-      <ThemedText type="title">Welcome to HerdOS</ThemedText>
-      <ThemedText type="small">Track your livestock health, location, and alerts in one app.</ThemedText>
+      <Image source={require('@/assets/images/favicon/web-app-manifest-512x512.png')} style={styles.image} />
+      <ThemedText type="subtitle" style={{ textAlign: 'center' }}>
+        Welcome to HerdOS
+      </ThemedText>
+      <ThemedText type="small" style={{ textAlign: 'center' }}>
+        Track your livestock health, location, and alerts in one app.
+      </ThemedText>
       <View style={styles.actions}>
-        <Pressable style={styles.secondaryButton} onPress={() => router.push('/onboarding/language-select')}>
-          <ThemedText type="subtitle">Skip</ThemedText>
-        </Pressable>
         <Pressable style={styles.primaryButton} onPress={() => router.push('/onboarding/illness-detection')}>
-          <ThemedText type="subtitle">Next</ThemedText>
+          <ThemedText type="linkPrimary"  style={styles.buttonText}>
+            Next
+          </ThemedText>
         </Pressable>
       </View>
     </ThemedView>
@@ -31,12 +34,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 24,
     gap: 12,
+    textAlign: 'center',
   },
   image: {
     width: 200,
     height: 200,
-    marginBottom: 24,
-    objectFit:'fill'
+    
+    objectFit: 'contain',
   },
   actions: {
     flexDirection: 'row',
@@ -44,15 +48,13 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   primaryButton: {
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 24,
     borderRadius: 14,
     backgroundColor: '#1A3C2A',
   },
-  secondaryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    backgroundColor: '#E5E7EB',
+
+  buttonText: {
+    color: '#FFFFFF',
   },
 });

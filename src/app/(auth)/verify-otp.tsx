@@ -73,7 +73,7 @@ export default function VerifyOtpScreen() {
         {error ? <ThemedText type="small" style={styles.errorText}>{error}</ThemedText> : null}
         <View style={styles.actions}>
           <Pressable style={styles.primaryButton} onPress={handleVerify} disabled={loading}>
-            <ThemedText type="small">{loading ? 'Verifying...' : 'Verify'}</ThemedText>
+            <ThemedText type="small" style={styles.buttonText}>{loading ? 'Verifying...' : 'Verify'}</ThemedText>
           </Pressable>
         </View>
         <Pressable style={styles.linkButton} onPress={() => router.replace('/(auth)/login')}>
@@ -119,4 +119,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#EF4444',
   },
+  buttonText:{
+    color: '#FFF'
+  }
 });

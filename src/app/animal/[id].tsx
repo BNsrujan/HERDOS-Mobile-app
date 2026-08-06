@@ -9,6 +9,7 @@ import LocateSheet, { type LocateSheetHandle } from '@/components/animal-detail/
 import LocationCard from '@/components/animal-detail/location-card';
 import ShutdownSheet, { type ShutdownSheetHandle } from '@/components/animal-detail/shutdown-sheet';
 import VitalsRow from '@/components/animal-detail/vitals-row';
+import Icon from '@/components/ui/icon';
 import { getAvatarColor } from '@/components/herd/avatar';
 import StatusBadge from '@/components/herd/status-badge';
 import { ThemedText } from '@/components/themed-text';
@@ -61,7 +62,7 @@ export default function AnimalDetailsScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-            <ThemedText type="smallBold">←</ThemedText>
+            <Icon name="arrow-left" color="#111827" />
           </TouchableOpacity>
           <ThemedText type="subtitle">{animal.name}</ThemedText>
           <View style={styles.iconButton} />

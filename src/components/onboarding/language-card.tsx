@@ -13,7 +13,7 @@ export default function LanguageCard({ label, selected, onSelect }: LanguageCard
   return (
     <Pressable onPress={onSelect} style={styles.pressable}>
       <ThemedView style={[styles.card, selected && styles.selected]}>
-        <ThemedText type="subtitle">{label}</ThemedText>
+        <ThemedText >{label}</ThemedText>
       </ThemedView>
     </Pressable>
   );

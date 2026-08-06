@@ -21,14 +21,16 @@ export default function LanguageSelectScreen() {
 
   return (
     <ThemedView style={styles.content}>
-      <ThemedText type="title">Choose Language</ThemedText>
+      <ThemedText type="subtitle">Choose Language</ThemedText>
       <ThemedText type="small">Select your preferred language to continue.</ThemedText>
 
       <LanguageGrid selectedLanguage={selectedLanguage} onSelect={handleSelect} />
 
       <Pressable style={styles.continueButton} onPress={() => handleSelect(selectedLanguage)}>
         <ThemedView style={styles.continueButtonInner}>
-          <ThemedText type="link">Continue</ThemedText>
+          <ThemedText type="link" style={styles.buttonText}>
+            Continue
+          </ThemedText>
         </ThemedView>
       </Pressable>
     </ThemedView>
@@ -46,9 +48,16 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   continueButtonInner: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderRadius: 14,
-    alignItems: 'center',
+      paddingVertical: 8,
+      paddingHorizontal: 24,
+      borderRadius: 14,
+      backgroundColor: '#1A3C2A',
+      justifyContent: 'center',
+      alignItems: 'center',
+      display: 'flex',
+      textAlign: 'center',
+  },
+  buttonText: {
+    color: '#FFFFFF',
   },
 });

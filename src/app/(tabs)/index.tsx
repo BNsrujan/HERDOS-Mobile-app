@@ -7,6 +7,8 @@ import HealthSummaryCard from '@/components/home/health-summary-card';
 import RecentActivityRow from '@/components/home/recent-activity-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import TabIcon from '@/components/ui/tab-icon';
+import { useTheme } from '@/hooks/use-theme';
 import { useAlerts } from '@/hooks/queries/use-alerts';
 import { useFarm } from '@/hooks/queries/use-farm';
 import { useHerdSummary } from '@/hooks/queries/use-herd-summary';
@@ -43,10 +45,10 @@ export default function HomeScreen() {
         <View style={styles.headerRow}>
           <View>
             <Image source={require('@/assets/images/logo-glow.png')} style={styles.logo} accessibilityLabel="HerdOS logo" />
-            <ThemedText type="small">Herd health and activity</ThemedText>
+            <ThemedText type="smallBold">Herd health and activity</ThemedText>
           </View>
           <TouchableOpacity onPress={() => router.push('/(tabs)/alerts')} style={styles.bellButton}>
-            <Text style={styles.bell}><Image src="" className='' fill  /></Text>
+            <Text style={styles.bell}><Image src="" className=''  /></Text>
           </TouchableOpacity>
         </View>
 

@@ -11,7 +11,7 @@ type StatusBadgeProps = {
 export default function StatusBadge({ status }: StatusBadgeProps) {
   return (
     <View style={[styles.badge, { backgroundColor: `${StatusColors[status]}33` }]}>
-      <ThemedText type="smallBold" style={[styles.text, { color: StatusColors[status] }]}> 
+      <ThemedText type="linkPrimary" style={[styles.text, { color: StatusColors[status] }]}> 
         {StatusLabels[status]}
       </ThemedText>
     </View>
@@ -20,8 +20,8 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
 
 const styles = StyleSheet.create({
   badge: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
     borderRadius: 999,
   },
   text: {

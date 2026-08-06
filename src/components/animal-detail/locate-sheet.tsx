@@ -6,6 +6,7 @@ import PulseRings from '@/components/animal-detail/pulse-rings';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import IconSymbol from '@/components/ui/icon-symbol';
+import Icon from '@/components/ui/icon';
 import { useLocateAnimal } from '@/hooks/mutations/use-locate-animal';
 
 export type LocateSheetHandle = {
@@ -61,9 +62,9 @@ const LocateSheet = forwardRef<LocateSheetHandle, LocateSheetProps>(function Loc
       <ThemedView style={styles.sheet}>
         <View style={styles.headerRow}>
           <ThemedText type="subtitle">Locate by Sound and light</ThemedText>
-          <Pressable onPress={() => sheetRef.current?.dismiss()}>
-            <ThemedText type="smallBold">✕</ThemedText>
-          </Pressable>
+            <Pressable style={styles.closeButton} onPress={() => sheetRef.current?.dismiss()}>
+              <Icon name="close" />
+            </Pressable>
         </View>
 
         <ThemedText type="small">By pressing this you the {animalName} sound will activate</ThemedText>

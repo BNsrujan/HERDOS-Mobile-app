@@ -56,6 +56,11 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     marginRight: Spacing.two,
+    height: 40,
+    textAlign: 'center',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   label: {
     fontSize: 14,

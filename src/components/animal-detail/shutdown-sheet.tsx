@@ -6,6 +6,7 @@ import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import PowerToggle from '@/components/animal-detail/power-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import Icon from '@/components/ui/icon';
 import { useShutdownCollar } from '@/hooks/mutations/use-shutdown-collar';
 
 export type ShutdownSheetHandle = {
@@ -68,8 +69,8 @@ const ShutdownSheet = forwardRef<ShutdownSheetHandle, ShutdownSheetProps>(functi
       <ThemedView style={styles.sheet}>
         <View style={styles.headerRow}>
           <ThemedText type="subtitle">Shut Down your device</ThemedText>
-          <Pressable onPress={() => sheetRef.current?.dismiss()}>
-            <ThemedText type="smallBold">✕</ThemedText>
+          <Pressable style={styles.closeButton} onPress={() => sheetRef.current?.dismiss()}>
+            <Icon name="close" />
           </Pressable>
         </View>
 

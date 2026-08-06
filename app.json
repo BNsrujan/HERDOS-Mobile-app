@@ -8,6 +8,7 @@
     "scheme": "herdos",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.yourcompany.herdos",
       "icon": "./assets/images/icon.svg"
     },
     "android": {
@@ -18,9 +19,10 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.svg"
       },
       "predictiveBackGestureEnabled": false,
+      "package": "com.yourcompany.herdos",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyCrvK6DaGFDnpobGDjNq0beVpNPTzlVDc8"
+          "apiKey": "AIzaSyCiKtrtOiPU_h0bY0BSOQivqzuJRwHGpJs"
         }
       }
     },
@@ -34,14 +36,20 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
-          "image": "./assets/images/icon.svg",
-          "imageWidth": 76
+          "image": "./assets/images/splash.svg",
+          "imageWidth": 300
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a2b51037-bd52-47cb-908c-15883f2fc056"
+      }
     }
   }
 }

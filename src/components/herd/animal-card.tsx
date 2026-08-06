@@ -28,9 +28,8 @@ export default function AnimalCard({ animal, onPress }: AnimalCardProps) {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 1,
     backgroundColor: '#FFFFFF',
     marginBottom: 12,
   },

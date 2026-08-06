@@ -59,7 +59,7 @@ export default function Login() {
 
         <View style={styles.actions}>
           <Pressable style={styles.primaryButton} onPress={handleSubmit} disabled={loading}>
-            <ThemedText type="small">{loading ? 'Please wait...' : 'Submit'}</ThemedText>
+            <ThemedText type="small" style={styles.buttonText}>{loading ? 'Please wait...' : 'Submit'}</ThemedText>
           </Pressable>
         </View>
       </View>
@@ -107,4 +107,7 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#EF4444',
   },
+  buttonText:{
+    color: '#fff',
+  }
 });

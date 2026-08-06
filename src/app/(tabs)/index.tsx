@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
 
 import AlertRow from '@/components/home/alert-row';
 import HealthSummaryCard from '@/components/home/health-summary-card';
@@ -42,11 +42,11 @@ export default function HomeScreen() {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.logo}>HERDOS</Text>
+            <Image source={require('@/assets/images/logo-glow.png')} style={styles.logo} accessibilityLabel="HerdOS logo" />
             <ThemedText type="small">Herd health and activity</ThemedText>
           </View>
           <TouchableOpacity onPress={() => router.push('/(tabs)/alerts')} style={styles.bellButton}>
-            <Text style={styles.bell}>🔔</Text>
+            <Text style={styles.bell}><Image src="" className='' fill  /></Text>
           </TouchableOpacity>
         </View>
 
@@ -121,9 +121,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    width: 140,
+    height: 32,
+    resizeMode: 'contain',
+    marginBottom: 2,
   },
   bellButton: {
     width: 44,

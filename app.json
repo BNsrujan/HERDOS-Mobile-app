@@ -8,7 +8,7 @@
     "scheme": "herdos",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/images/icon.svg"
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +20,7 @@
       "predictiveBackGestureEnabled": false,
       "config": {
         "googleMaps": {
-          "apiKey": "REPLACE_WITH_REAL_KEY"
+          "apiKey": "AIzaSyCrvK6DaGFDnpobGDjNq0beVpNPTzlVDc8"
         }
       }
     },
@@ -34,7 +34,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/icon.svg",
           "imageWidth": 76
         }
       ]

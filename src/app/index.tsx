@@ -38,7 +38,7 @@ export default function IndexScreen() {
   if (hasSeenOnboarding === null || isLoggedIn === null) {
     return (
       <ThemedView style={styles.container}>
-        <ThemedText type="title">Preparing HerdOS…</ThemedText>
+        <ThemedText type="title">Preparing HerdOS</ThemedText>
       </ThemedView>
     );
   }
@@ -52,5 +52,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
+    paddingTop: 48,
+    backgroundColor: '#fff',
   },
 });

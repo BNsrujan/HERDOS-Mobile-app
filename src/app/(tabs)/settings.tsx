@@ -40,7 +40,7 @@ export default function SettingsScreen() {
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
-          <ThemedText type="title">HERODOS</ThemedText>
+          <Image source={require('@/assets/images/logo-glow.png')} style={styles.logo} accessibilityLabel="HerdOS logo" />
           <Pressable onPress={() => router.push('/settings/edit-profile' as never)}>
             {avatarSource ? (
               <Image source={avatarSource} style={styles.avatar} />
@@ -157,6 +157,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  logo: {
+    width: 140,
+    height: 36,
+    resizeMode: 'contain',
+    marginBottom: 2,
   },
   avatar: {
     width: 48,

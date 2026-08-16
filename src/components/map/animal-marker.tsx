@@ -1,8 +1,13 @@
-import { StyleSheet, Text, View } from 'react-native';
-import { Marker } from 'react-native-maps';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { MapStatusColors } from '@/constants/theme';
 import type { AnimalPosition } from '@/types/animal';
+
+let Marker: any;
+if (Platform.OS !== 'web') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  Marker = require('react-native-maps').Marker;
+}
 
 type AnimalMarkerProps = {
   position: AnimalPosition;
@@ -10,6 +15,14 @@ type AnimalMarkerProps = {
 };
 
 export default function AnimalMarker({ position, onPress }: AnimalMarkerProps) {
+  if (Platform.OS === 'web') {
+    return (
+      <View style={[styles.pin, { backgroundColor: MapStatusColors[position.status] }]}> 
+        <Text style={styles.paw}>🐾</Text>
+      </View>
+    );
+  }
+
   return (
     <Marker coordinate={{ latitude: position.lat, longitude: position.lng }} onPress={onPress}>
       <View style={[styles.pin, { backgroundColor: MapStatusColors[position.status] }]}> 

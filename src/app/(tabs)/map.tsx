@@ -1,8 +1,23 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import MapView, { Marker, Polygon, Polyline, type Region } from 'react-native-maps';
+import { ActivityIndicator, Modal, Pressable, Platform, StyleSheet, TextInput, View } from 'react-native';
+import type { Region } from 'react-native-maps';
+
+// Load react-native-maps only on native platforms to avoid web build-time errors
+let MapView: any;
+let Marker: any;
+let Polygon: any;
+let Polyline: any;
+if (Platform.OS !== 'web') {
+  // require at runtime so web bundlers won't evaluate native modules
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const RNMaps = require('react-native-maps');
+  MapView = RNMaps.default || RNMaps;
+  Marker = RNMaps.Marker;
+  Polygon = RNMaps.Polygon;
+  Polyline = RNMaps.Polyline;
+}
 
 import AllAnimalsSheet from '@/components/map/all-animals-sheet';
 import AnimalCallout from '@/components/map/animal-callout';
@@ -23,7 +38,7 @@ import type { GeofencePoint } from '@/types/zone';
 export default function MapScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const mapRef = useRef<MapView>(null);
+  const mapRef = useRef<any>(null);
   const { data: farm, isLoading: farmLoading, isError: farmError, refetch: refetchFarm } = useFarm();
   const { data: positions, isLoading: positionsLoading, isError: positionsError, refetch: refetchPositions } = useAnimalPositions();
   const { data: recentAnimals = [] } = useRecentAnimals(10);
@@ -238,6 +253,17 @@ export default function MapScreen() {
   const isDraftMode = Boolean(editZoneId || createZone === 'true');
   const canSaveCreate = draftPoints.length >= 3;
 
+  if (Platform.OS === 'web') {
+    return (
+      <ThemedView style={styles.container}>
+        <View style={styles.webFallback}>
+          <ThemedText type="title">Map is not available in web preview</ThemedText>
+          <ThemedText type="subtitle">Please open this screen in a native device or simulator.</ThemedText>
+        </View>
+      </ThemedView>
+    );
+  }
+
   return (
     <ThemedView style={styles.container}>
       <MapView
@@ -246,7 +272,7 @@ export default function MapScreen() {
         style={styles.map}
         mapType="satellite"
         initialRegion={initialRegion}
-        onPress={(event) => {
+        onPress={(event: any) => {
           if (createZone !== 'true') {
             return;
           }
@@ -256,7 +282,7 @@ export default function MapScreen() {
             lng: event.nativeEvent.coordinate.longitude,
           });
         }}
-        onLongPress={(event) => {
+        onLongPress={(event: any) => {
           if (!editZoneId || draftPoints.length < 2) {
             return;
           }
@@ -309,7 +335,7 @@ export default function MapScreen() {
                 key={`draft-${index}`}
                 coordinate={{ latitude: point.lat, longitude: point.lng }}
                 draggable
-                onDragEnd={(event) => {
+                onDragEnd={(event: any) => {
                   const nextPoints = [...draftPoints];
                   nextPoints[index] = {
                     lat: event.nativeEvent.coordinate.latitude,
@@ -491,6 +517,13 @@ const styles = StyleSheet.create({
   },
   actionButtonText: {
     color: '#FFFFFF',
+  },
+  webFallback: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    textAlign: 'center',
   },
   modalBackdrop: {
     flex: 1,

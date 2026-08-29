@@ -24,8 +24,8 @@ export default function HealthSummaryCard({ healthy, watch, alert }: HealthSumma
       <ThemedText type="heading">Herd Health Today</ThemedText>
       <View style={styles.stats}>
         {STATS.map((stat) => (
-          <View key={stat.key} style={styles.statItem}>
-            <View style={[styles.dot, { backgroundColor: stat.color }]} />
+          <View key={stat.key} style={[styles.statItem, { backgroundColor: stat.color }]}>
+            <View style={[styles.dot , { backgroundColor: stat.color }]} />
             {/* Three columns share the row, so a 4-digit count must shrink to fit. */}
             <ThemedText type="display" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
               {values[stat.key]}
@@ -43,18 +43,19 @@ const styles = StyleSheet.create({
     gap: Space.lg,
   },
   stats: {
+    display:'flex',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems:'center',
+    width: '100%',
+    gap: Space.lg,
   },
   statItem: {
     flex: 1,
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: Space.xs,
+    padding:4,
+    borderRadius:8
   },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: Radius.full,
-    marginBottom: Space.xs,
-  },
+
 });

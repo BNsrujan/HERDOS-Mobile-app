@@ -88,6 +88,7 @@ const styles = StyleSheet.create({
     paddingVertical: Space.sm,
     paddingHorizontal: Space.lg,
     borderRadius: Radius.full,
+    
   },
   dot: {
     width: 8,

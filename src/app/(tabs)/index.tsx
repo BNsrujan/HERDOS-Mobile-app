@@ -60,9 +60,9 @@ export default function HomeScreen() {
             style={styles.logo}
             accessibilityLabel="HerdOS logo"
           />
-          <ThemedText type="small" themeColor="textSecondary">
+          {/* <ThemedText type="small" themeColor="textSecondary">
             Herd health and activity
-          </ThemedText>
+          </ThemedText> */}
         </View>
         <AppPressable
           onPress={() => router.push('/(tabs)/alerts')}
@@ -147,12 +147,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: -10,
   },
   logo: {
-    width: 140,
+    width: 32,
     height: 32,
     resizeMode: 'contain',
-    marginBottom: 2,
   },
   bellButton: {
     width: MinTouchTarget,

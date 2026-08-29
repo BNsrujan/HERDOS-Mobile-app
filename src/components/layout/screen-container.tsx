@@ -60,8 +60,8 @@ export default function ScreenContainer({
     (edges.includes('bottom') ? insets.bottom : 0) +
     // TODO: prefer useBottomTabBarHeight() once @react-navigation/bottom-tabs is an
     // explicit dependency; BottomTabInset is only an approximation.
-    (hasTabBar ? BottomTabInset : 0) +
-    (hasFab ? 88 : Space['2xl']);
+    // (hasTabBar ? BottomTabInset : 0) +
+    (hasFab ? 22 : Space['2xl']);
 
   const horizontal = padded ? Space['2xl'] : 0;
 

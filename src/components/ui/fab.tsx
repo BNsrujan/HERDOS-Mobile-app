@@ -51,9 +51,10 @@ const styles = StyleSheet.create({
     right: Space['2xl'],
     width: 60,
     height: 60,
-    borderRadius: Radius.full,
+    borderRadius: Radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
     ...Elevation.fab,
+    marginBottom:-38
   },
 });

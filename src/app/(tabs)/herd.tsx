@@ -57,7 +57,7 @@ export default function HerdScreen() {
         />
       </QueryBoundary>
 
-      <Fab icon="plus" onPress={() => router.push('/animal/new')} accessibilityLabel="Add animal" hasTabBar />
+      <Fab icon="plus" onPress={() => router.push('/animal/new')} accessibilityLabel="Add animal" />
     </ScreenContainer>
   );
 }

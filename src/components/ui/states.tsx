@@ -96,9 +96,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Space.md,
+    height:'100%',
+    marginBottom:3
   },
   stateCard: {
     gap: Space.sm,
     alignItems: 'flex-start',
+    
   },
 });

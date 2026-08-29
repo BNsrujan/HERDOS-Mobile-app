@@ -1,41 +1,18 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Barrel for the design tokens. Import from '@/constants/theme' everywhere;
+ * the split into colors.ts / tokens.ts is an implementation detail.
  */
 
-import '@/global.css';
-
-import type { AnimalStatus } from '@/types/animal';
 import { Platform } from 'react-native';
 
-export const Colors = {
-  light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
-  },
-  dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
-  },
-} as const;
-
-export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
+export * from '@/constants/colors';
+export * from '@/constants/tokens';
 
 export const Fonts = Platform.select({
   ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
     sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
     serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
     rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
   },
   default: {
@@ -51,45 +28,3 @@ export const Fonts = Platform.select({
     mono: 'var(--font-mono)',
   },
 });
-
-export const Spacing = {
-  half: 2,
-  one: 4,
-  two: 8,
-  three: 16,
-  four: 24,
-  five: 32,
-  six: 64,
-} as const;
-
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
-export const MaxContentWidth = 800;
-
-export const StatusColors: Record<AnimalStatus, string> = {
-  healthy: '#22C55E',
-  watch: '#F5A524',
-  alert: '#EF4444',
-  lame: '#F43F5E',
-  milking: '#3B82F6',
-  pregnant: '#A855F7',
-};
-
-export const StatusLabels: Record<AnimalStatus, string> = {
-  healthy: 'Healthy',
-  watch: 'Watch',
-  alert: 'Alert',
-  lame: 'Lame',
-  milking: 'Milking',
-  pregnant: 'Pregnant',
-};
-
-export const AvatarColors = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6', '#0F766E'] as const;
-
-export const MapStatusColors: Record<AnimalStatus, string> = {
-  healthy: StatusColors.healthy,
-  milking: StatusColors.healthy,
-  pregnant: StatusColors.healthy,
-  watch: StatusColors.watch,
-  alert: StatusColors.alert,
-  lame: StatusColors.alert,
-};

@@ -1,10 +1,13 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import ScreenContainer from '@/components/layout/screen-container';
+import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { MaxContentWidth, Space } from '@/constants/theme';
 import { verifyOtp } from '@/services/api/user';
 
 export default function VerifyOtpScreen() {
@@ -59,67 +62,43 @@ export default function VerifyOtpScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <ScreenContainer style={styles.container}>
       <View style={styles.form}>
-        <ThemedText type="subtitle">Verify phone</ThemedText>
-        <ThemedText type="small">We sent an OTP to {phone ?? 'your phone'}</ThemedText>
-        <TextInput
+        <ThemedText type="title">Verify phone</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          We sent an OTP to {phone ?? 'your phone'}
+        </ThemedText>
+
+        <Input
+          label="One-time code"
           placeholder="Enter OTP"
           value={otp}
           onChangeText={setOtp}
-          style={styles.input}
           keyboardType="number-pad"
+          textContentType="oneTimeCode"
+          maxLength={6}
+          errorText={error ?? undefined}
         />
-        {error ? <ThemedText type="small" style={styles.errorText}>{error}</ThemedText> : null}
-        <View style={styles.actions}>
-          <Pressable style={styles.primaryButton} onPress={handleVerify} disabled={loading}>
-            <ThemedText type="small" style={styles.buttonText}>{loading ? 'Verifying...' : 'Verify'}</ThemedText>
-          </Pressable>
-        </View>
-        <Pressable style={styles.linkButton} onPress={() => router.replace('/(auth)/login')}>
-          <ThemedText type="link">Back to login</ThemedText>
-        </Pressable>
+
+        <Button size="lg" fullWidth label="Verify" loading={loading} onPress={handleVerify} />
+        <Button
+          variant="ghost"
+          label="Back to login"
+          onPress={() => router.replace('/(auth)/login')}
+        />
       </View>
-    </ThemedView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
   },
   form: {
     width: '100%',
-    maxWidth: 420,
-    gap: 12,
+    maxWidth: MaxContentWidth / 2,
+    alignSelf: 'center',
+    gap: Space.lg,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: 'transparent',
-  },
-  actions: {
-    marginTop: 12,
-  },
-  primaryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: '#1A3C2A',
-  },
-  linkButton: {
-    marginTop: 12,
-    alignItems: 'center',
-  },
-  errorText: {
-    color: '#EF4444',
-  },
-  buttonText:{
-    color: '#FFF'
-  }
 });

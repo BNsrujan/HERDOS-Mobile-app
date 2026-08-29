@@ -19,12 +19,14 @@ export interface AnimalPosition {
   updatedAt: string;
 }
 
+// The API returns null for any vital the collar has not reported yet
+// (see mapAnimalDetail in Herdos_backend/server.js).
 export interface AnimalDetail extends Animal {
-  bodyTempC: number;
-  activityPercent: number;
-  ruminationHours: number;
-  lastKnownLat: number;
-  lastKnownLng: number;
+  bodyTempC: number | null;
+  activityPercent: number | null;
+  ruminationHours: number | null;
+  lastKnownLat: number | null;
+  lastKnownLng: number | null;
 }
 
 export interface ActivitySegment {

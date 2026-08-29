@@ -1,12 +1,14 @@
 import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
-import { forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import PulseRings from '@/components/animal-detail/pulse-rings';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import IconSymbol from '@/components/ui/icon-symbol';
+import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { AppPressable } from '@/components/ui/pressable';
+import { MinTouchTarget, Space } from '@/constants/theme';
 import { useLocateAnimal } from '@/hooks/mutations/use-locate-animal';
 
 export type LocateSheetHandle = {
@@ -24,11 +26,18 @@ const LocateSheet = forwardRef<LocateSheetHandle, LocateSheetProps>(function Loc
   const locateMutation = useLocateAnimal();
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const playTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useImperativeHandle(ref, () => ({
     present: () => sheetRef.current?.present(),
     dismiss: () => sheetRef.current?.dismiss(),
   }));
+
+  useEffect(() => () => {
+    if (playTimerRef.current) {
+      clearTimeout(playTimerRef.current);
+    }
+  }, []);
 
   const snapPoints = useMemo(() => ['65%'], []);
 
@@ -39,7 +48,11 @@ const LocateSheet = forwardRef<LocateSheetHandle, LocateSheetProps>(function Loc
 
     setError(null);
     setPlaying(true);
-    window.setTimeout(() => setPlaying(false), 3200);
+
+    if (playTimerRef.current) {
+      clearTimeout(playTimerRef.current);
+    }
+    playTimerRef.current = setTimeout(() => setPlaying(false), 3200);
   };
 
   return (
@@ -47,44 +60,47 @@ const LocateSheet = forwardRef<LocateSheetHandle, LocateSheetProps>(function Loc
       ref={sheetRef}
       snapPoints={snapPoints}
       enablePanDownToClose
-      backdropComponent={(props) => (
-        <BottomSheetBackdrop
-          {...props}
-          opacity={0.5}
-          pressBehavior="close"
-        />
-      )}
+      backdropComponent={(props) => <BottomSheetBackdrop {...props} opacity={0.5} pressBehavior="close" />}
       onDismiss={() => {
         setPlaying(false);
         setError(null);
       }}
     >
-      <ThemedView style={styles.sheet}>
+      <ThemedView type="surfaceElevated" style={styles.sheet}>
         <View style={styles.headerRow}>
-          <ThemedText type="subtitle">Locate by Sound and light</ThemedText>
-            <Pressable style={styles.closeButton} onPress={() => sheetRef.current?.dismiss()}>
-              <Icon name="close" />
-            </Pressable>
+          <ThemedText type="heading">Locate by sound and light</ThemedText>
+          <AppPressable
+            style={styles.closeButton}
+            accessibilityLabel="Close"
+            onPress={() => sheetRef.current?.dismiss()}
+          >
+            <Icon name="close" />
+          </AppPressable>
         </View>
 
-        <ThemedText type="small">By pressing this you the {animalName} sound will activate</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          This plays a sound and flashes the light on {animalName}&apos;s collar.
+        </ThemedText>
 
         <View style={styles.pulseWrap}>
           <PulseRings active={playing} />
         </View>
 
-        <Pressable onPress={handlePlaySound} disabled={playing} style={styles.button}>
-          {playing ? (
-            <ThemedText type="smallBold" style={styles.buttonText}>Playing...</ThemedText>
-          ) : (
-            <View style={styles.buttonInner}>
-              <IconSymbol name="speaker" color="#FFFFFF" size={18} />
-              <ThemedText type="smallBold" style={styles.buttonText}>Play the sound</ThemedText>
-            </View>
-          )}
-        </Pressable>
+        <Button
+          size="lg"
+          fullWidth
+          variant="accent"
+          iconLeft="speaker"
+          label={playing ? 'Playing…' : 'Play the sound'}
+          disabled={playing}
+          onPress={handlePlaySound}
+        />
 
-        {error ? <ThemedText type="small" style={styles.errorText}>{error}</ThemedText> : null}
+        {error ? (
+          <ThemedText type="small" themeColor="danger">
+            {error}
+          </ThemedText>
+        ) : null}
       </ThemedView>
     </BottomSheetModal>
   );
@@ -95,36 +111,24 @@ export default LocateSheet;
 const styles = StyleSheet.create({
   sheet: {
     flex: 1,
-    padding: 20,
-    gap: 16,
+    padding: Space.xl,
+    gap: Space.lg,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  closeButton: {
+    width: MinTouchTarget,
+    height: MinTouchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -12,
+  },
   pulseWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-  },
-  button: {
-    backgroundColor: '#22C55E',
-    borderRadius: 999,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    alignItems: 'center',
-  },
-  buttonInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  buttonText: {
-    color: '#FFFFFF',
-  },
-  errorText: {
-    color: '#EF4444',
-    textAlign: 'center',
+    paddingVertical: Space.md,
   },
 });

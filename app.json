@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.herdos.app",
-      "icon": "./assets/images/logo-glow.png"
+      "icon": "./assets/images/logo-glow.png",
+      "config": {
+        "googleMapsApiKey": "REPLACE_WITH_IOS_GOOGLE_MAPS_KEY"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,7 @@
         "monochromeImage": "./assets/images/logo-glow.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.yourcompany.herdos",
+      "package": "com.herdos.app",
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyCiKtrtOiPU_h0bY0BSOQivqzuJRwHGpJs"

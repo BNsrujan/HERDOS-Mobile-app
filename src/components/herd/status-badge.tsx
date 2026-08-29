@@ -1,7 +1,5 @@
-import { StyleSheet, View } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { StatusColors, StatusLabels } from '@/constants/theme';
+import { Badge } from '@/components/ui/badge';
+import { StatusLabels, StatusTone } from '@/constants/theme';
 import type { AnimalStatus } from '@/types/animal';
 
 type StatusBadgeProps = {
@@ -9,22 +7,5 @@ type StatusBadgeProps = {
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
-  return (
-    <View style={[styles.badge, { backgroundColor: `${StatusColors[status]}33` }]}>
-      <ThemedText type="linkPrimary" style={[styles.text, { color: StatusColors[status] }]}> 
-        {StatusLabels[status]}
-      </ThemedText>
-    </View>
-  );
+  return <Badge label={StatusLabels[status]} tone={StatusTone[status]} />;
 }
-
-const styles = StyleSheet.create({
-  badge: {
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-  },
-  text: {
-    letterSpacing: 0.5,
-  },
-});

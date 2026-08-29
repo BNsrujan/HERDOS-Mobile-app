@@ -1,7 +1,9 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Card } from '@/components/ui/card';
+import { MinTouchTarget } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type LanguageCardProps = {
   label: string;
@@ -10,25 +12,23 @@ type LanguageCardProps = {
 };
 
 export default function LanguageCard({ label, selected, onSelect }: LanguageCardProps) {
+  const theme = useTheme();
+
   return (
-    <Pressable onPress={onSelect} style={styles.pressable}>
-      <ThemedView style={[styles.card, selected && styles.selected]}>
-        <ThemedText >{label}</ThemedText>
-      </ThemedView>
-    </Pressable>
+    <Card
+      variant={selected ? 'tinted' : 'outlined'}
+      tone={selected ? 'brand' : 'neutral'}
+      onPress={onSelect}
+      style={[styles.card, selected && { borderColor: theme.brand, borderWidth: 2 }]}
+    >
+      <ThemedText type="body">{label}</ThemedText>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  pressable: {
-    width: '100%',
-  },
   card: {
-    padding: 16,
-    borderRadius: 16,
-  },
-  selected: {
-    borderWidth: 2,
-    borderColor: '#3C87F7',
+    minHeight: MinTouchTarget,
+    justifyContent: 'center',
   },
 });

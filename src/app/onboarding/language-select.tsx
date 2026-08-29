@@ -1,63 +1,46 @@
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet } from 'react-native';
 
+import ScreenContainer from '@/components/layout/screen-container';
 import LanguageGrid from '@/components/onboarding/language-grid';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
+import { Space } from '@/constants/theme';
 import { useOnboardingStatus } from '@/hooks/use-onboarding-status';
+import i18n from '@/services/i18n';
 
 export default function LanguageSelectScreen() {
   const { markOnboardingSeen } = useOnboardingStatus();
   const router = useRouter();
-  const selectedLanguage = useMemo(() => 'en', []);
+  // Previously hardcoded to 'en', so the user's choice was collected and discarded.
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
 
-  async function handleSelect(code: string) {
+  async function handleContinue() {
+    await i18n.changeLanguage(selectedLanguage);
     await markOnboardingSeen();
-    if (code) {
-      router.replace('/(auth)/login');
-    }
+    router.replace('/(auth)/login');
   }
 
   return (
-    <ThemedView style={styles.content}>
-      <ThemedText type="subtitle">Choose Language</ThemedText>
-      <ThemedText type="small">Select your preferred language to continue.</ThemedText>
+    <ScreenContainer style={styles.container} contentContainerStyle={styles.content}>
+      <ThemedText type="title">Choose Language</ThemedText>
+      <ThemedText type="small" themeColor="textSecondary">
+        Select your preferred language to continue.
+      </ThemedText>
 
-      <LanguageGrid selectedLanguage={selectedLanguage} onSelect={handleSelect} />
+      <LanguageGrid selectedLanguage={selectedLanguage} onSelect={setSelectedLanguage} />
 
-      <Pressable style={styles.continueButton} onPress={() => handleSelect(selectedLanguage)}>
-        <ThemedView style={styles.continueButtonInner}>
-          <ThemedText type="link" style={styles.buttonText}>
-            Continue
-          </ThemedText>
-        </ThemedView>
-      </Pressable>
-    </ThemedView>
+      <Button size="lg" fullWidth label="Continue" onPress={handleContinue} />
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    padding: 24,
+  container: {
     justifyContent: 'center',
-    gap: 12,
   },
-  continueButton: {
-    marginTop: 24,
-  },
-  continueButtonInner: {
-      paddingVertical: 8,
-      paddingHorizontal: 24,
-      borderRadius: 14,
-      backgroundColor: '#1A3C2A',
-      justifyContent: 'center',
-      alignItems: 'center',
-      display: 'flex',
-      textAlign: 'center',
-  },
-  buttonText: {
-    color: '#FFFFFF',
+  content: {
+    gap: Space.md,
   },
 });

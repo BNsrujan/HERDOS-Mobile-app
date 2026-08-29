@@ -1,29 +1,56 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/constants/theme';
+import { Fonts, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+export type ThemedTextType =
+  | 'display'
+  | 'title'
+  | 'heading'
+  | 'body'
+  | 'bodyBold'
+  | 'small'
+  | 'smallBold'
+  | 'caption'
+  | 'overline'
+  | 'link'
+  | 'code'
+  // Deprecated aliases, kept so unmigrated screens keep compiling.
+  | 'default'
+  | 'pageTitle'
+  | 'subtitle'
+  | 'linkPrimary';
+
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'pageTitle' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  type?: ThemedTextType;
   themeColor?: ThemeColor;
 };
 
-export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
+const ALIASES: Partial<Record<ThemedTextType, ThemedTextType>> = {
+  default: 'body',
+  pageTitle: 'title',
+  subtitle: 'heading',
+  linkPrimary: 'link',
+};
+
+/** Caps how far Dynamic Type can scale each step before layouts break. */
+const MAX_SCALE: Partial<Record<ThemedTextType, number>> = {
+  display: 1.3,
+  title: 1.3,
+  heading: 1.4,
+};
+
+export function ThemedText({ style, type = 'body', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
+  const resolved = ALIASES[type] ?? type;
 
   return (
     <Text
+      maxFontSizeMultiplier={MAX_SCALE[resolved] ?? 1.6}
       style={[
-        { color: theme[themeColor ?? 'text'] },
-        type === 'default' && styles.default,
-        type === 'title' && styles.title,
-        type === 'pageTitle' && styles.pageTitle,
-        type === 'small' && styles.small,
-        type === 'smallBold' && styles.smallBold,
-        type === 'subtitle' && styles.subtitle,
-        type === 'link' && styles.link,
-        type === 'linkPrimary' && styles.linkPrimary,
-        type === 'code' && styles.code,
+        { color: theme[themeColor ?? 'textPrimary'] },
+        resolved === 'link' && { color: theme.textLink },
+        styles[resolved as keyof typeof styles],
         style,
       ]}
       {...rest}
@@ -32,49 +59,19 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 }
 
 const styles = StyleSheet.create({
-  small: {
-    //TODO: add a font family  
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 500,
-  },
-  smallBold: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: 700,
-  },
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: 500,
-  },
-  title: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  subtitle: {
-    fontSize: 30,
-    lineHeight: 40,
-    fontWeight: 600,
-  },
-  pageTitle: {
-    fontSize: 48,
-    fontWeight: 600,
-    lineHeight: 52,
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 14,
-  },
-  linkPrimary: {
-    lineHeight: 30,
-    fontSize: 14,
-    color: '#3c87f7',
-  },
+  display: { fontSize: 32, lineHeight: 38, fontWeight: '700' },
+  title: { fontSize: 24, lineHeight: 30, fontWeight: '700' },
+  heading: { fontSize: 20, lineHeight: 26, fontWeight: '600' },
+  body: { fontSize: 16, lineHeight: 24, fontWeight: '400' },
+  bodyBold: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
+  small: { fontSize: 14, lineHeight: 20, fontWeight: '500' },
+  smallBold: { fontSize: 14, lineHeight: 20, fontWeight: '700' },
+  caption: { fontSize: 12, lineHeight: 16, fontWeight: '500' },
+  overline: { fontSize: 11, lineHeight: 14, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 },
+  link: { fontSize: 16, lineHeight: 24, fontWeight: '600' },
   code: {
     fontFamily: Fonts.mono,
-    fontWeight: Platform.select({ android: 700 }) ?? 500,
+    fontWeight: Platform.select({ android: '700' as const }) ?? ('500' as const),
     fontSize: 12,
   },
 });

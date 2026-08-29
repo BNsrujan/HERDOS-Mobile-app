@@ -1,11 +1,15 @@
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
+import Avatar from '@/components/herd/avatar';
+import ScreenContainer from '@/components/layout/screen-container';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AppPressable } from '@/components/ui/pressable';
+import { Space } from '@/constants/theme';
 import { useUpdateProfile } from '@/hooks/mutations/use-update-profile';
 import { useUploadAvatar } from '@/hooks/mutations/use-upload-avatar';
 import { useCurrentUser } from '@/hooks/use-current-user';
@@ -15,15 +19,27 @@ export default function EditProfileScreen() {
   const { data: currentUser } = useCurrentUser();
   const updateProfileMutation = useUpdateProfile();
   const uploadAvatarMutation = useUploadAvatar();
-  const [name, setName] = useState(currentUser?.name ?? currentUser?.userName ?? '');
-  const [location, setLocation] = useState(currentUser?.location ?? '');
-  const [localAvatarUri, setLocalAvatarUri] = useState<string | undefined>(currentUser?.avatarUrl);
+
+  const [name, setName] = useState('');
+  const [location, setLocation] = useState('');
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | undefined>();
+  const [error, setError] = useState<string | null>(null);
+
+  // useState only reads its initializer on first render, so seeding from
+  // currentUser directly left the fields blank whenever the query resolved later.
+  useEffect(() => {
+    if (!currentUser) return;
+    setName(currentUser.name ?? currentUser.userName ?? '');
+    setLocation(currentUser.location ?? '');
+    setLocalAvatarUri(currentUser.avatarUrl);
+  }, [currentUser]);
 
   const phone = useMemo(() => currentUser?.phone ?? currentUser?.phoneNO ?? '', [currentUser]);
 
   async function handlePickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
+      setError('Photo library access is needed to change your avatar.');
       return;
     }
 
@@ -39,88 +55,75 @@ export default function EditProfileScreen() {
 
     const uri = result.assets[0].uri;
     setLocalAvatarUri(uri);
+    setError(null);
 
     uploadAvatarMutation.mutate(uri, {
-      onSuccess: (data) => {
-        setLocalAvatarUri(data.avatarUrl);
-      },
+      onSuccess: (data) => setLocalAvatarUri(data.avatarUrl),
+      onError: () => setError("Couldn't upload that photo. Please try again."),
     });
   }
 
   async function handleSave() {
-    await updateProfileMutation.mutateAsync({
-      name: name.trim() || undefined,
-      location: location.trim() || undefined,
-      avatarUrl: localAvatarUri,
-    });
-    router.back();
+    setError(null);
+    try {
+      await updateProfileMutation.mutateAsync({
+        name: name.trim() || undefined,
+        location: location.trim() || undefined,
+        avatarUrl: localAvatarUri,
+      });
+      router.back();
+    } catch {
+      setError("Couldn't save your profile. Please try again.");
+    }
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <ThemedText type="title">Edit Profile</ThemedText>
+    <ScreenContainer scroll edges={['bottom']} contentContainerStyle={styles.content}>
+      <AppPressable
+        onPress={handlePickAvatar}
+        accessibilityLabel="Change profile photo"
+        minTouchTarget={false}
+        style={styles.avatarButton}
+      >
+        <Avatar name={name || currentUser?.userName || 'H'} photoUrl={localAvatarUri} size={120} />
+        {uploadAvatarMutation.isPending ? <ActivityIndicator style={styles.loader} /> : null}
+      </AppPressable>
 
-        <Pressable style={styles.avatarButton} onPress={handlePickAvatar}>
-          {localAvatarUri ? (
-            <Image source={{ uri: localAvatarUri }} style={styles.avatar} />
-          ) : (
-            <ThemedView style={styles.avatarPlaceholder} type="backgroundElement">
-              <ThemedText type="subtitle">{(name || currentUser?.userName || 'H')[0]?.toUpperCase() ?? 'H'}</ThemedText>
-            </ThemedView>
-          )}
-          {uploadAvatarMutation.isPending ? <ActivityIndicator style={styles.loader} /> : null}
-        </Pressable>
+      <Input label="Name" value={name} onChangeText={setName} autoCapitalize="words" />
+      <Input label="Location" value={location} onChangeText={setLocation} />
 
-        <View style={styles.fieldGroup}>
-          <ThemedText type="smallBold">Name</ThemedText>
-          <TextInput value={name} onChangeText={setName} style={styles.input} />
-        </View>
+      <View style={styles.fieldGroup}>
+        <ThemedText type="small" themeColor="textSecondary">
+          Phone
+        </ThemedText>
+        <ThemedText type="body">{phone || 'Unavailable'}</ThemedText>
+      </View>
 
-        <View style={styles.fieldGroup}>
-          <ThemedText type="smallBold">Location</ThemedText>
-          <TextInput value={location} onChangeText={setLocation} style={styles.input} />
-        </View>
+      {error ? (
+        <ThemedText type="small" themeColor="danger">
+          {error}
+        </ThemedText>
+      ) : null}
 
-        <View style={styles.fieldGroup}>
-          <ThemedText type="smallBold">Phone</ThemedText>
-          <ThemedText type="small" style={styles.phoneText}>{phone || 'Unavailable'}</ThemedText>
-        </View>
-
-        <Pressable style={styles.saveButton} onPress={handleSave} disabled={updateProfileMutation.isPending}>
-          <ThemedText type="smallBold" style={styles.saveButtonText}>
-            {updateProfileMutation.isPending ? 'Saving…' : 'Save profile'}
-          </ThemedText>
-        </Pressable>
-      </ScrollView>
-    </ThemedView>
+      <Button
+        size="lg"
+        fullWidth
+        label="Save profile"
+        loading={updateProfileMutation.isPending}
+        onPress={handleSave}
+        style={styles.save}
+      />
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
-    padding: 24,
-    gap: 18,
+    gap: Space.xl,
   },
   avatarButton: {
     alignSelf: 'center',
     position: 'relative',
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.light.backgroundElement,
   },
   loader: {
     position: 'absolute',
@@ -128,26 +131,9 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   fieldGroup: {
-    gap: 8,
+    gap: Space.xs,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  phoneText: {
-    color: '#6B7280',
-  },
-  saveButton: {
-    marginTop: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    color: '#FFFFFF',
+  save: {
+    marginTop: Space.sm,
   },
 });

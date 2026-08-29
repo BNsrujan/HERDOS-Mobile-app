@@ -1,12 +1,14 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import type { ActivitySegment } from '@/types/animal';
 
 const segmentColors = {
   grazing: '#86EFAC',
-  resting: '#D1D5DB',
-  active: '#166534',
+  resting: '#9CA3AF',
+  active: '#16A34A',
 } as const;
 
 const segmentLabels = {
@@ -20,13 +22,14 @@ type ActivityTimelineBarProps = {
 };
 
 export default function ActivityTimelineBar({ segments }: ActivityTimelineBarProps) {
+  const theme = useTheme();
   const axisStart = 6;
   const axisEnd = 18;
   const totalHours = axisEnd - axisStart;
 
   return (
     <View style={styles.container}>
-      <View style={styles.barTrack}>
+      <View style={[styles.barTrack, { backgroundColor: theme.surfaceSunken }]}>
         {segments.map((segment) => {
           const offset = ((segment.startHour - axisStart) / totalHours) * 100;
           const width = ((segment.endHour - segment.startHour) / totalHours) * 100;
@@ -47,15 +50,15 @@ export default function ActivityTimelineBar({ segments }: ActivityTimelineBarPro
         })}
       </View>
       <View style={styles.axisRow}>
-        <ThemedText type="small">6AM</ThemedText>
-        <ThemedText type="small">12PM</ThemedText>
-        <ThemedText type="small">6PM</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">6AM</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">12PM</ThemedText>
+        <ThemedText type="caption" themeColor="textSecondary">6PM</ThemedText>
       </View>
       <View style={styles.legendRow}>
         {Object.entries(segmentLabels).map(([key, label]) => (
           <View key={key} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: segmentColors[key as keyof typeof segmentColors] }]} />
-            <ThemedText type="small">{label}</ThemedText>
+            <ThemedText type="caption" themeColor="textSecondary">{label}</ThemedText>
           </View>
         ))}
       </View>
@@ -65,38 +68,37 @@ export default function ActivityTimelineBar({ segments }: ActivityTimelineBarPro
 
 const styles = StyleSheet.create({
   container: {
-    gap: 10,
+    gap: Space.sm,
   },
   barTrack: {
     height: 28,
-    borderRadius: 999,
-    backgroundColor: '#F3F4F6',
+    borderRadius: Radius.full,
     position: 'relative',
     overflow: 'hidden',
   },
   segment: {
     position: 'absolute',
     height: '100%',
-    borderRadius: 999,
+    borderRadius: Radius.full,
   },
   axisRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingHorizontal: Space.xs,
   },
   legendRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Space.md,
     flexWrap: 'wrap',
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: Space.xs,
   },
   legendDot: {
     width: 10,
     height: 10,
-    borderRadius: 999,
+    borderRadius: Radius.full,
   },
 });

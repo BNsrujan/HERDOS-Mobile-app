@@ -23,6 +23,18 @@ export function getAnimals(params: { status?: AnimalStatus | 'all'; search?: str
   return apiGet<Animal[]>(`/animals${query.toString() ? `?${query.toString()}` : ''}`);
 }
 
+export type CreateAnimalInput = {
+  name: string;
+  breed: string;
+  ageYears: number;
+  status: AnimalStatus;
+  collarId: string;
+};
+
+export function createAnimal(input: CreateAnimalInput) {
+  return apiPost<Animal>('/animals', input);
+}
+
 export function getAnimalSummary() {
   return apiGet<{ healthy: number; watch: number; alert: number }>('/animals/summary');
 }

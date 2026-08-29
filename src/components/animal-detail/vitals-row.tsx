@@ -1,31 +1,35 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Card } from '@/components/ui/card';
+import { Space } from '@/constants/theme';
 
 type VitalsRowProps = {
-  bodyTempC: number;
-  activityPercent: number;
-  ruminationHours: number;
+  bodyTempC: number | null;
+  activityPercent: number | null;
+  ruminationHours: number | null;
 };
+
+const EMPTY = '—';
 
 export default function VitalsRow({ bodyTempC, activityPercent, ruminationHours }: VitalsRowProps) {
   const items = [
-    { label: 'Body temp', value: `${bodyTempC.toFixed(1)}°C` },
-    { label: 'Activity', value: `${activityPercent}%` },
-    { label: 'Rumination', value: `${ruminationHours.toFixed(1)}h` },
+    { label: 'Body temp', value: bodyTempC !== null ? `${bodyTempC.toFixed(1)}°C` : EMPTY },
+    { label: 'Activity', value: activityPercent !== null ? `${activityPercent}%` : EMPTY },
+    { label: 'Rumination', value: ruminationHours !== null ? `${ruminationHours.toFixed(1)}h` : EMPTY },
   ];
 
   return (
     <View style={styles.row}>
       {items.map((item) => (
-        <View key={item.label} style={styles.card}>
-          <ThemedText type="small" style={styles.label}>
+        <Card key={item.label} variant="sunken" padding="md" style={styles.card}>
+          <ThemedText type="caption" themeColor="textSecondary" style={styles.center}>
             {item.label}
           </ThemedText>
-          <ThemedText type="smallBold" style={styles.value}>
+          <ThemedText type="smallBold" style={styles.center}>
             {item.value}
           </ThemedText>
-        </View>
+        </Card>
       ))}
     </View>
   );
@@ -34,23 +38,16 @@ export default function VitalsRow({ bodyTempC, activityPercent, ruminationHours 
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: Space.md,
+    marginBottom: Space.lg,
   },
   card: {
     flex: 1,
-    padding: 14,
-    borderRadius: 16,
-    backgroundColor: '#F9FAFB',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Space.xs,
   },
-  label: {
-    color: '#6B7280',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  value: {
+  center: {
     textAlign: 'center',
   },
 });

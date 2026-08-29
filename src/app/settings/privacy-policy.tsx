@@ -1,48 +1,48 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import ScreenContainer from '@/components/layout/screen-container';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Space } from '@/constants/theme';
+
+// TODO: every section below is placeholder copy and must be replaced with real
+// legal text before release.
+const SECTIONS = [
+  {
+    heading: 'Data We Collect',
+    body: 'HERDOS may collect account information, device metadata, and livestock-related telemetry necessary for operating the service.',
+  },
+  {
+    heading: 'How We Use It',
+    body: 'We use this information to provide alerts, diagnostics, and account management features.',
+  },
+  {
+    heading: 'Data Sharing',
+    body: 'We may share limited data with trusted service providers to support the app experience and reliability.',
+  },
+  {
+    heading: 'Contact Us',
+    body: 'Contact support for any privacy-related requests or questions.',
+  },
+];
 
 export default function PrivacyPolicyScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.content}>
-        <ThemedText type="title">Privacy Policy</ThemedText>
-
-        <ThemedText type="smallBold">Data We Collect</ThemedText>
-        <ThemedText type="small">
-          {/* TODO: Replace with real legal copy. */}
-          HERDOS may collect account information, device metadata, and livestock-related telemetry necessary for operating the service.
+    <ScreenContainer scroll edges={['bottom']} contentContainerStyle={styles.content}>
+      {SECTIONS.map((section) => (
+        <ThemedText key={section.heading} type="smallBold">
+          {section.heading}
+          {'\n'}
+          <ThemedText type="small" themeColor="textSecondary">
+            {section.body}
+          </ThemedText>
         </ThemedText>
-
-        <ThemedText type="smallBold">How We Use It</ThemedText>
-        <ThemedText type="small">
-          {/* TODO: Replace with real legal copy. */}
-          We use this information to provide alerts, diagnostics, and account management features.
-        </ThemedText>
-
-        <ThemedText type="smallBold">Data Sharing</ThemedText>
-        <ThemedText type="small">
-          {/* TODO: Replace with real legal copy. */}
-          We may share limited data with trusted service providers to support the app experience and reliability.
-        </ThemedText>
-
-        <ThemedText type="smallBold">Contact Us</ThemedText>
-        <ThemedText type="small">
-          {/* TODO: Replace with real legal copy. */}
-          Contact support for any privacy-related requests or questions.
-        </ThemedText>
-      </View>
-    </ThemedView>
+      ))}
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
-    padding: 24,
-    gap: 12,
+    gap: Space.lg,
   },
 });

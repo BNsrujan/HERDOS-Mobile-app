@@ -1,6 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import Icon from '@/components/ui/icon';
+import { Surface } from '@/components/ui/surface';
+import { Colors, Elevation, Radius, Space } from '@/constants/theme';
 
 type FarmHeaderPillProps = {
   name: string;
@@ -8,55 +11,54 @@ type FarmHeaderPillProps = {
   totalCount: number;
 };
 
+/**
+ * Pinned to the light scheme: it floats over satellite imagery, which is dark in
+ * both themes, so a theme-following surface would be unreadable half the time.
+ */
 export default function FarmHeaderPill({ name, onlineCount, totalCount }: FarmHeaderPillProps) {
   return (
-    <View style={styles.container}>
+    <Surface scheme="light" level="surface" style={styles.container}>
       <View style={styles.iconCircle}>
-        <ThemedText type="smallBold">🏡</ThemedText>
+        <Icon name="home" size={16} color={Colors.light.info} />
       </View>
-      <ThemedText type="smallBold" style={styles.name}>{name}</ThemedText>
+      <ThemedText type="smallBold" style={{ color: Colors.light.textPrimary }} numberOfLines={1}>
+        {name}
+      </ThemedText>
       <View style={styles.dot} />
-      <ThemedText type="small" style={styles.count}>{onlineCount}/{totalCount} online</ThemedText>
-    </View>
+      <ThemedText type="small" style={{ color: Colors.light.textSecondary }}>
+        {onlineCount}/{totalCount} online
+      </ThemedText>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 16,
+    top: Space.lg,
     alignSelf: 'center',
+    maxWidth: '90%',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    gap: Space.sm,
+    paddingVertical: Space.sm,
+    paddingHorizontal: Space.md,
+    borderRadius: Radius.full,
+    ...Elevation.raised,
     zIndex: 2,
   },
   iconCircle: {
     width: 28,
     height: 28,
-    borderRadius: 999,
-    backgroundColor: '#E0F2FE',
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.infoSubtle,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  name: {
-    fontSize: 14,
   },
   dot: {
     width: 8,
     height: 8,
-    borderRadius: 999,
-    backgroundColor: '#22C55E',
-  },
-  count: {
-    color: '#4B5563',
+    borderRadius: Radius.full,
+    backgroundColor: Colors.light.success,
   },
 });

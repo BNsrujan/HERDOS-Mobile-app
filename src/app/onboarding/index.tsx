@@ -3,6 +3,8 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
+import { Space } from '@/constants/theme';
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -10,18 +12,14 @@ export default function OnboardingScreen() {
   return (
     <ThemedView style={styles.container}>
       <Image source={require('@/assets/images/favicon/web-app-manifest-512x512.png')} style={styles.image} />
-      <ThemedText type="subtitle" style={{ textAlign: 'center' }}>
+      <ThemedText type="title" style={{ textAlign: 'center' }}>
         Welcome to HerdOS
       </ThemedText>
       <ThemedText type="small" style={{ textAlign: 'center' }}>
         Track your livestock health, location, and alerts in one app.
       </ThemedText>
       <View style={styles.actions}>
-        <Pressable style={styles.primaryButton} onPress={() => router.push('/onboarding/illness-detection')}>
-          <ThemedText type="linkPrimary"  style={styles.buttonText}>
-            Next
-          </ThemedText>
-        </Pressable>
+        <Button size="lg" label="Next" onPress={() => router.push('/onboarding/illness-detection')} />
       </View>
     </ThemedView>
   );
@@ -46,15 +44,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: 24,
-  },
-  primaryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    backgroundColor: '#1A3C2A',
-  },
-
-  buttonText: {
-    color: '#FFFFFF',
   },
 });

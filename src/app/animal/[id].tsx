@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
 import ActivityTimelineBar from '@/components/animal-detail/activity-timeline-bar';
 import AlertHistoryItem from '@/components/animal-detail/alert-history-item';
@@ -9,11 +9,16 @@ import LocateSheet, { type LocateSheetHandle } from '@/components/animal-detail/
 import LocationCard from '@/components/animal-detail/location-card';
 import ShutdownSheet, { type ShutdownSheetHandle } from '@/components/animal-detail/shutdown-sheet';
 import VitalsRow from '@/components/animal-detail/vitals-row';
+import ScreenContainer from '@/components/layout/screen-container';
+import ScreenHeader from '@/components/layout/screen-header';
+import { Card } from '@/components/ui/card';
 import Icon from '@/components/ui/icon';
+import { AppPressable } from '@/components/ui/pressable';
+import { QueryBoundary } from '@/components/ui/states';
 import { getAvatarColor } from '@/components/herd/avatar';
 import StatusBadge from '@/components/herd/status-badge';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Radius, Space } from '@/constants/theme';
 import { useActivityTimeline } from '@/hooks/queries/use-activity-timeline';
 import { useAnimalAlertHistory } from '@/hooks/queries/use-animal-alert-history';
 import { useAnimalDetail } from '@/hooks/queries/use-animal-detail';
@@ -38,41 +43,40 @@ export default function AnimalDetailsScreen() {
     router.push(`/(tabs)/map?focusAnimalId=${id}`);
   };
 
-  if (isLoading) {
+  if (isLoading || isError || !animal) {
     return (
-      <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" color="#22C55E" />
-      </ThemedView>
-    );
-  }
-
-  if (isError || !animal) {
-    return (
-      <ThemedView style={styles.container}>
-        <ThemedText type="title">Unable to load animal</ThemedText>
-        <Pressable onPress={() => refetch()} style={styles.retryButton}>
-          <ThemedText type="smallBold">Retry</ThemedText>
-        </Pressable>
-      </ThemedView>
+      <ScreenContainer contentContainerStyle={styles.centered}>
+        <QueryBoundary
+          isLoading={isLoading}
+          isError={isError || !animal}
+          onRetry={refetch}
+          error={{ description: 'Unable to load this animal.' }}
+        >
+          {null}
+        </QueryBoundary>
+      </ScreenContainer>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
-            <Icon name="arrow-left" color="#111827" />
-          </TouchableOpacity>
-          <ThemedText type="subtitle">{animal.name}</ThemedText>
-          <View style={styles.iconButton} />
-        </View>
+    <ScreenContainer
+      scroll
+      edges={['top', 'bottom']}
+      contentContainerStyle={styles.content}
+      header={<ScreenHeader title={animal.name} back />}
+      floating={
+        <>
+          <LocateSheet ref={locateSheetRef} animalId={animal.id} animalName={animal.name} />
+          <ShutdownSheet ref={shutdownSheetRef} animalId={animal.id} animalName={animal.name} />
+        </>
+      }
+    >
 
         <View style={styles.heroCard}>
           {animal.photoUrl ? (
             <Image source={{ uri: animal.photoUrl }} style={styles.heroImage} />
           ) : (
-            <View style={[styles.heroImage, styles.heroFallback, { backgroundColor: heroBackground }]} />
+            <View style={[styles.heroImage, { backgroundColor: heroBackground }]} />
           )}
           <View style={styles.heroOverlay} />
           <View style={styles.heroContent}>
@@ -80,8 +84,10 @@ export default function AnimalDetailsScreen() {
               <StatusBadge status={animal.status} />
             </View>
             <View style={styles.heroTextBlock}>
-              <ThemedText type="subtitle" style={styles.heroTitle}>{animal.name}</ThemedText>
-              <ThemedText type="small" style={styles.heroSubtitle}>{animal.breed} • ID: {animal.collarId}</ThemedText>
+              <ThemedText type="heading" style={styles.heroTitle}>{animal.name}</ThemedText>
+              <ThemedText type="small" style={styles.heroSubtitle}>
+                {animal.breed} • ID: {animal.collarId}
+              </ThemedText>
             </View>
           </View>
         </View>
@@ -94,10 +100,10 @@ export default function AnimalDetailsScreen() {
 
         <LocationCard lat={animal.lastKnownLat} lng={animal.lastKnownLng} onExpand={handleViewOnMap} />
 
-        <View style={styles.card}>
-          <ThemedText type="subtitle">Today's Activity</ThemedText>
+        <Card variant="elevated" radius="xl" style={styles.card}>
+          <ThemedText type="heading">Today&apos;s Activity</ThemedText>
           <ActivityTimelineBar segments={timelineData?.segments ?? []} />
-        </View>
+        </Card>
 
         <CollarActions
           onLocatePress={() => locateSheetRef.current?.present()}
@@ -105,67 +111,49 @@ export default function AnimalDetailsScreen() {
           onShutdownPress={() => shutdownSheetRef.current?.present()}
         />
 
-        <View style={styles.card}>
-          <Pressable onPress={() => setExpanded((value) => !value)} style={styles.expandHeader}>
-            <ThemedText type="subtitle">Alert History</ThemedText>
-            <ThemedText type="smallBold">{expanded ? '▾' : '▸'}</ThemedText>
-          </Pressable>
+        <Card variant="elevated" radius="xl" style={styles.card}>
+          <AppPressable
+            onPress={() => setExpanded((value) => !value)}
+            accessibilityLabel="Toggle alert history"
+            accessibilityState={{ expanded }}
+            minTouchTarget={false}
+            style={styles.expandHeader}
+          >
+            <ThemedText type="heading">Alert History</ThemedText>
+            <Icon name={expanded ? 'chevron-down' : 'chevron-right'} size={18} />
+          </AppPressable>
           {expanded ? (
             <View style={styles.historyList}>
               {alertHistory.length ? (
                 alertHistory.map((alert) => <AlertHistoryItem key={alert.id} alert={alert} />)
               ) : (
-                <ThemedText type="small">No resolved alerts yet.</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  No resolved alerts yet.
+                </ThemedText>
               )}
             </View>
           ) : null}
-        </View>
-      </ScrollView>
-
-      {animal ? (
-        <>
-          <LocateSheet ref={locateSheetRef} animalId={animal.id} animalName={animal.name} />
-          <ShutdownSheet ref={shutdownSheetRef} animalId={animal.id} animalName={animal.name} />
-        </>
-      ) : null}
-    </ThemedView>
+        </Card>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  centered: {
+    justifyContent: 'center',
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 999,
-    backgroundColor: '#F3F4F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    gap: Space.lg,
   },
   heroCard: {
     height: 220,
-    borderRadius: 24,
+    borderRadius: Radius['2xl'],
     overflow: 'hidden',
     position: 'relative',
   },
   heroImage: {
     width: '100%',
     height: '100%',
-  },
-  heroFallback: {
-    backgroundColor: '#2563EB',
   },
   heroOverlay: {
     ...StyleSheet.absoluteFill,
@@ -174,39 +162,30 @@ const styles = StyleSheet.create({
   heroContent: {
     ...StyleSheet.absoluteFill,
     justifyContent: 'space-between',
-    padding: 16,
+    padding: Space.lg,
   },
   badgeRow: {
     alignItems: 'flex-start',
   },
   heroTextBlock: {
-    gap: 4,
+    gap: Space.xs,
   },
+  // Fixed light text: the hero always sits on a darkened photo overlay.
   heroTitle: {
-    color: '#fff',
+    color: '#FFFFFF',
   },
   heroSubtitle: {
-    color: '#F3F4F6',
+    color: '#E5E7EB',
   },
   card: {
-    padding: 16,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    gap: 12,
+    gap: Space.md,
   },
   expandHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   historyList: {
-    gap: 4,
-  },
-  retryButton: {
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
+    gap: Space.sm,
   },
 });

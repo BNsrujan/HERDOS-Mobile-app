@@ -9,23 +9,34 @@ export function useResolveAlert() {
   return useMutation({
     mutationFn: resolveAlert,
     onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: ['alerts'] });
+      // Consumers key on ['alerts', params], so the exact key ['alerts'] holds nothing.
+      // Match by prefix instead, and snapshot every matching cache entry for rollback.
+      const filter = { queryKey: ['alerts'] as const };
+      await queryClient.cancelQueries(filter);
 
-      const previousAlerts = queryClient.getQueryData<HerdAlert[]>(['alerts']);
+      const previous = queryClient.getQueriesData<HerdAlert[]>(filter);
 
-      queryClient.setQueryData<HerdAlert[]>(['alerts'], (current) =>
-        (current ?? []).map((alert) => (alert.id === id ? { ...alert, acknowledged: true, resolvedAt: new Date().toISOString() } : alert)),
+      queryClient.setQueriesData<HerdAlert[]>(filter, (current) =>
+        (current ?? []).map((alert) =>
+          alert.id === id
+            ? { ...alert, acknowledged: true, resolvedAt: new Date().toISOString() }
+            : alert,
+        ),
       );
 
-      return { previousAlerts };
+      return { previous };
     },
     onError: (_error, _id, context) => {
-      if (context?.previousAlerts) {
-        queryClient.setQueryData(['alerts'], context.previousAlerts);
-      }
+      context?.previous?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
     },
     onSettled: () => {
+      // Resolving an alert also changes the home counters and the animal's history.
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['herd-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-positions'] });
+      queryClient.invalidateQueries({ queryKey: ['alert-history'] });
     },
   });
 }

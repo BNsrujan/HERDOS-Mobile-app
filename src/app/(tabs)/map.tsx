@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, Platform, StyleSheet, TextInput, View } from 'react-native';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Modal, Platform, StyleSheet, View } from 'react-native';
 import type { Region } from 'react-native-maps';
 
 // Load react-native-maps only on native platforms to avoid web build-time errors
@@ -19,13 +19,19 @@ if (Platform.OS !== 'web') {
   Polyline = RNMaps.Polyline;
 }
 
+import ScreenContainer from '@/components/layout/screen-container';
 import AllAnimalsSheet from '@/components/map/all-animals-sheet';
 import AnimalCallout from '@/components/map/animal-callout';
 import AnimalMarker from '@/components/map/animal-marker';
 import FarmHeaderPill from '@/components/map/farm-header-pill';
 import MapActionButton from '@/components/map/map-action-button';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { LoadingState } from '@/components/ui/states';
+import { Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { useCreateZone } from '@/hooks/mutations/use-create-zone';
 import { useUpdateZoneShape } from '@/hooks/mutations/use-update-zone-shape';
 import { useAnimalPositions } from '@/hooks/queries/use-animal-positions';
@@ -35,11 +41,15 @@ import { useZones } from '@/hooks/queries/use-zones';
 import type { Animal } from '@/types/animal';
 import type { GeofencePoint } from '@/types/zone';
 
+// Used when /farm is unavailable so the map still renders. Matches the seeded farm.
+const FALLBACK_FARM_CENTER = { lat: 13.4168, lng: 75.2588 };
+
 export default function MapScreen() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const theme = useTheme();
   const mapRef = useRef<any>(null);
-  const { data: farm, isLoading: farmLoading, isError: farmError, refetch: refetchFarm } = useFarm();
+  const { data: farm, refetch: refetchFarm } = useFarm();
   const { data: positions, isLoading: positionsLoading, isError: positionsError, refetch: refetchPositions } = useAnimalPositions();
   const { data: recentAnimals = [] } = useRecentAnimals(10);
   const { data: zones = [] } = useZones();
@@ -56,14 +66,12 @@ export default function MapScreen() {
   const [nameModalVisible, setNameModalVisible] = useState(false);
   const [zoneName, setZoneName] = useState('');
 
-  const initialRegion = useMemo<Region | undefined>(() => {
-    if (!farm) {
-      return undefined;
-    }
+  const initialRegion = useMemo<Region>(() => {
+    const center = farm ?? FALLBACK_FARM_CENTER;
 
     return {
-      latitude: farm.lat,
-      longitude: farm.lng,
+      latitude: center.lat,
+      longitude: center.lng,
       latitudeDelta: 0.04,
       longitudeDelta: 0.04,
     };
@@ -73,20 +81,8 @@ export default function MapScreen() {
   const selectedAnimal = useMemo(() => recentAnimals.find((animal) => animal.id === selectedAnimalId), [recentAnimals, selectedAnimalId]);
 
   const handleRecenter = useCallback(() => {
-    if (!farm) {
-      return;
-    }
-
-    mapRef.current?.animateToRegion(
-      {
-        latitude: farm.lat,
-        longitude: farm.lng,
-        latitudeDelta: 0.04,
-        longitudeDelta: 0.04,
-      },
-      400
-    );
-  }, [farm]);
+    mapRef.current?.animateToRegion(initialRegion, 400);
+  }, [initialRegion]);
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([
@@ -170,12 +166,14 @@ export default function MapScreen() {
   }, [editZoneId, zones]);
 
   useEffect(() => {
-    if (createZone !== 'true') {
+    // Only reset when leaving draft mode entirely - in edit mode the polygon is
+    // loaded by the editZoneId effect above and must not be cleared here.
+    if (createZone !== 'true' && !editZoneId) {
       setDraftPoints([]);
       setZoneName('');
       setNameModalVisible(false);
     }
-  }, [createZone]);
+  }, [createZone, editZoneId]);
 
   useEffect(() => {
     if (!focusAnimalId || !positions?.length) {
@@ -231,22 +229,23 @@ export default function MapScreen() {
     );
   }, [focusZoneId, zones]);
 
-  if (farmLoading || positionsLoading) {
+  if (positionsLoading) {
     return (
-      <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" />
-      </ThemedView>
+      <ScreenContainer contentContainerStyle={styles.centered}>
+        <LoadingState />
+      </ScreenContainer>
     );
   }
 
-  if (farmError || positionsError || !farm) {
+  if (positionsError) {
     return (
-      <ThemedView style={styles.container}>
+      <ScreenContainer contentContainerStyle={styles.centered}>
         <ThemedText type="title">Unable to load map</ThemedText>
-        <Pressable style={styles.retryButton} onPress={() => handleRefresh()}>
-          <ThemedText type="smallBold">Retry</ThemedText>
-        </Pressable>
-      </ThemedView>
+        <ThemedText type="small" themeColor="textSecondary">
+          Check your connection and try again.
+        </ThemedText>
+        <Button label="Retry" onPress={handleRefresh} />
+      </ScreenContainer>
     );
   }
 
@@ -255,17 +254,19 @@ export default function MapScreen() {
 
   if (Platform.OS === 'web') {
     return (
-      <ThemedView style={styles.container}>
-        <View style={styles.webFallback}>
-          <ThemedText type="title">Map is not available in web preview</ThemedText>
-          <ThemedText type="subtitle">Please open this screen in a native device or simulator.</ThemedText>
-        </View>
-      </ThemedView>
+      <ScreenContainer contentContainerStyle={styles.centered}>
+        <ThemedText type="title" style={styles.centerText}>
+          Map is not available in web preview
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.centerText}>
+          Please open this screen on a device or simulator.
+        </ThemedText>
+      </ScreenContainer>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <MapView
         ref={mapRef}
         provider="google"
@@ -292,11 +293,11 @@ export default function MapScreen() {
             lng: event.nativeEvent.coordinate.longitude,
           };
 
-          const nearestIndex = draftPoints.reduce((bestIndex, point, index) => {
-            const bestDistance = draftPoints[bestIndex] ? Math.hypot(point.lat - target.lat, point.lng - target.lng) : Number.POSITIVE_INFINITY;
-            const currentDistance = Math.hypot(point.lat - target.lat, point.lng - target.lng);
-            return currentDistance < bestDistance ? index : bestIndex;
-          }, 0);
+          const distanceTo = (point: GeofencePoint) => Math.hypot(point.lat - target.lat, point.lng - target.lng);
+          const nearestIndex = draftPoints.reduce(
+            (bestIndex, point, index) => (distanceTo(point) < distanceTo(draftPoints[bestIndex]) ? index : bestIndex),
+            0,
+          );
 
           const nextIndex = (nearestIndex + 1) % draftPoints.length;
           const insertIndex = Math.min(nearestIndex, nextIndex) + 1;
@@ -306,7 +307,7 @@ export default function MapScreen() {
         }}
       >
         {zones.filter((zone) => zone.active).map((zone) => (
-          <View key={zone.id}>
+          <Fragment key={zone.id}>
             <Polygon
               coordinates={zone.points.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
               strokeColor={editZoneId === zone.id ? '#0F766E' : '#14B8A6'}
@@ -319,7 +320,7 @@ export default function MapScreen() {
                 <View style={styles.vertexMarker} />
               </Marker>
             ))}
-          </View>
+          </Fragment>
         ))}
 
         {editZoneId && draftPoints.length ? (
@@ -374,93 +375,85 @@ export default function MapScreen() {
         ) : null}
       </MapView>
 
-      <FarmHeaderPill name={farm.name} onlineCount={farm.onlineCount} totalCount={farm.totalCount} />
+      {farm ? (
+        <FarmHeaderPill name={farm.name} onlineCount={farm.onlineCount} totalCount={farm.totalCount} />
+      ) : null}
 
       <View style={styles.actionStack}>
-        <MapActionButton icon="crosshair" onPress={handleRecenter} />
-        <MapActionButton icon="refresh" onPress={handleRefresh} />
-        <MapActionButton icon="fence" onPress={() => router.push('/zones' as never)} />
+        <MapActionButton icon="crosshair" onPress={handleRecenter} accessibilityLabel="Recenter map" />
+        <MapActionButton icon="refresh" onPress={handleRefresh} accessibilityLabel="Refresh positions" />
+        <MapActionButton icon="fence" onPress={() => router.push('/zones')} accessibilityLabel="Manage fences" />
       </View>
 
       {isDraftMode ? (
         <View style={styles.draftActions}>
           {createZone === 'true' ? (
             <>
-              <Pressable
-                style={[styles.actionButton, draftPoints.length === 0 && styles.actionButtonDisabled]}
+              <Button
+                variant="secondary"
+                label="Undo last point"
                 disabled={draftPoints.length === 0}
                 onPress={() => setDraftPoints((current) => current.slice(0, -1))}
-              >
-                <ThemedText type="smallBold" style={styles.actionButtonText}>Undo last point</ThemedText>
-              </Pressable>
-              <Pressable
-                style={[styles.actionButton, !canSaveCreate && styles.actionButtonDisabled]}
-                disabled={!canSaveCreate || createZoneMutation.isPending}
+                style={styles.flexButton}
+              />
+              <Button
+                label="Name & Save"
+                disabled={!canSaveCreate}
+                loading={createZoneMutation.isPending}
                 onPress={() => setNameModalVisible(true)}
-              >
-                <ThemedText type="smallBold" style={styles.actionButtonText}>
-                  {createZoneMutation.isPending ? 'Saving…' : 'Name & Save'}
-                </ThemedText>
-              </Pressable>
+                style={styles.flexButton}
+              />
             </>
           ) : (
             <>
-              <Pressable style={styles.actionButton} onPress={handleCancelDraft}>
-                <ThemedText type="smallBold" style={styles.actionButtonText}>Cancel</ThemedText>
-              </Pressable>
-              <Pressable
-                style={[styles.actionButton, updateZoneShapeMutation.isPending && styles.actionButtonDisabled]}
-                disabled={updateZoneShapeMutation.isPending}
+              <Button
+                variant="secondary"
+                label="Cancel"
+                onPress={handleCancelDraft}
+                style={styles.flexButton}
+              />
+              <Button
+                label="Save"
+                loading={updateZoneShapeMutation.isPending}
                 onPress={handleSaveEdit}
-              >
-                <ThemedText type="smallBold" style={styles.actionButtonText}>
-                  {updateZoneShapeMutation.isPending ? 'Saving…' : 'Save'}
-                </ThemedText>
-              </Pressable>
+                style={styles.flexButton}
+              />
             </>
           )}
           {createZone === 'true' ? (
-            <Pressable style={styles.actionButton} onPress={handleCancelDraft}>
-              <ThemedText type="smallBold" style={styles.actionButtonText}>Cancel</ThemedText>
-            </Pressable>
+            <Button
+              variant="secondary"
+              label="Cancel"
+              onPress={handleCancelDraft}
+              style={styles.flexButton}
+            />
           ) : null}
         </View>
       ) : null}
 
       <Modal visible={nameModalVisible} transparent animationType="slide">
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <ThemedText type="subtitle">Name this zone</ThemedText>
-            <TextInput
-              value={zoneName}
-              onChangeText={setZoneName}
-              placeholder="Zone name"
-              style={styles.input}
-              autoFocus
-            />
+        <View style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]}>
+          <Card variant="elevated" padding="xl" radius="xl" style={styles.modalCard}>
+            <ThemedText type="heading">Name this zone</ThemedText>
+            <Input value={zoneName} onChangeText={setZoneName} placeholder="Zone name" autoFocus />
             <View style={styles.modalActions}>
-              <Pressable style={styles.modalButton} onPress={() => setNameModalVisible(false)}>
-                <ThemedText type="smallBold">Cancel</ThemedText>
-              </Pressable>
-              <Pressable
-                style={[styles.modalButton, styles.modalButtonPrimary, !zoneName.trim() && styles.actionButtonDisabled]}
-                disabled={!zoneName.trim() || createZoneMutation.isPending}
+              <Button variant="secondary" label="Cancel" onPress={() => setNameModalVisible(false)} />
+              <Button
+                label="Save"
+                disabled={!zoneName.trim()}
+                loading={createZoneMutation.isPending}
                 onPress={() => {
                   setNameModalVisible(false);
                   handleSaveCreate();
                 }}
-              >
-                <ThemedText type="smallBold" style={styles.actionButtonText}>
-                  {createZoneMutation.isPending ? 'Saving…' : 'Save'}
-                </ThemedText>
-              </Pressable>
+              />
             </View>
-          </View>
+          </Card>
         </View>
       </Modal>
 
       <AllAnimalsSheet animals={recentAnimals} onSelect={handleSelectAnimal} />
-    </ThemedView>
+    </View>
   );
 }
 
@@ -471,95 +464,49 @@ const styles = StyleSheet.create({
   map: {
     flex: 1,
   },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Space.md,
+  },
+  centerText: {
+    textAlign: 'center',
+  },
   actionStack: {
     position: 'absolute',
-    right: 16,
+    right: Space.lg,
     top: 96,
     zIndex: 3,
   },
-  retryButton: {
-    marginTop: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-  },
-  editActions: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 110,
-    zIndex: 5,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 12,
-  },
   draftActions: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: Space.lg,
+    right: Space.lg,
     bottom: 104,
     zIndex: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: Space.md,
   },
-  actionButton: {
+  flexButton: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: '#111827',
-    alignItems: 'center',
-  },
-  actionButtonDisabled: {
-    opacity: 0.5,
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-  },
-  webFallback: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    textAlign: 'center',
   },
   modalBackdrop: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: 'rgba(17, 24, 39, 0.35)',
+    padding: Space.xl,
   },
   modalCard: {
     width: '100%',
     maxWidth: 420,
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    gap: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: Space.md,
   },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
-  },
-  modalButton: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-  },
-  modalButtonPrimary: {
-    backgroundColor: '#111827',
+    gap: Space.md,
   },
   vertexMarker: {
     width: 8,

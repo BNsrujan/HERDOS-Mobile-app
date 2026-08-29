@@ -1,8 +1,8 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { StatusColors } from '@/constants/theme';
+import { Card } from '@/components/ui/card';
+import { Radius, Space, StatusColors } from '@/constants/theme';
 
 type HealthSummaryCardProps = {
   healthy: number;
@@ -10,37 +10,37 @@ type HealthSummaryCardProps = {
   alert: number;
 };
 
+const STATS = [
+  { key: 'healthy', label: 'Healthy', color: StatusColors.healthy },
+  { key: 'watch', label: 'Watch', color: StatusColors.watch },
+  { key: 'alert', label: 'Alert', color: StatusColors.alert },
+] as const;
+
 export default function HealthSummaryCard({ healthy, watch, alert }: HealthSummaryCardProps) {
+  const values = { healthy, watch, alert };
+
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="subtitle">Herd Health Today</ThemedText>
+    <Card variant="tinted" tone="brand" padding="xl" radius="xl" style={styles.container}>
+      <ThemedText type="heading">Herd Health Today</ThemedText>
       <View style={styles.stats}>
-        <View style={styles.statItem}>
-          <View style={[styles.dot, { backgroundColor: StatusColors.healthy }]} />
-          <ThemedText type="title">{healthy}</ThemedText>
-          <ThemedText type="small">Healthy</ThemedText>
-        </View>
-        <View style={styles.statItem}>
-          <View style={[styles.dot, { backgroundColor: StatusColors.watch }]} />
-          <ThemedText type="title">{watch}</ThemedText>
-          <ThemedText type="small">Watch</ThemedText>
-        </View>
-        <View style={styles.statItem}>
-          <View style={[styles.dot, { backgroundColor: StatusColors.alert }]} />
-          <ThemedText type="title">{alert}</ThemedText>
-          <ThemedText type="small">Alert</ThemedText>
-        </View>
+        {STATS.map((stat) => (
+          <View key={stat.key} style={styles.statItem}>
+            <View style={[styles.dot, { backgroundColor: stat.color }]} />
+            {/* Three columns share the row, so a 4-digit count must shrink to fit. */}
+            <ThemedText type="display" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+              {values[stat.key]}
+            </ThemedText>
+            <ThemedText type="small">{stat.label}</ThemedText>
+          </View>
+        ))}
       </View>
-    </ThemedView>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ECFDF5',
-    borderRadius: 20,
-    padding: 20,
-    gap: 16,
+    gap: Space.lg,
   },
   stats: {
     flexDirection: 'row',
@@ -49,12 +49,12 @@ const styles = StyleSheet.create({
   statItem: {
     flex: 1,
     alignItems: 'flex-start',
-    gap: 6,
+    gap: Space.xs,
   },
   dot: {
     width: 12,
     height: 12,
-    borderRadius: 999,
-    marginBottom: 4,
+    borderRadius: Radius.full,
+    marginBottom: Space.xs,
   },
 });

@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
+import { useTheme } from '@/hooks/use-theme';
 
 type PowerToggleProps = {
   value: boolean;
@@ -11,6 +12,7 @@ type PowerToggleProps = {
 };
 
 export default function PowerToggle({ value, onChange, disabled = false }: PowerToggleProps) {
+  const theme = useTheme();
   const thumbX = useSharedValue(value ? 214 : 0);
 
   useEffect(() => {
@@ -26,11 +28,17 @@ export default function PowerToggle({ value, onChange, disabled = false }: Power
       accessibilityRole="switch"
       disabled={disabled}
       onPress={() => onChange(!value)}
-      style={[styles.track, disabled && styles.disabled, value ? styles.trackOn : styles.trackOff]}
+      accessibilityState={{ checked: value, disabled }}
+      accessibilityLabel="Collar power"
+      style={[
+        styles.track,
+        disabled && styles.disabled,
+        { backgroundColor: value ? theme.success : theme.successSubtle },
+      ]}
     >
       <ThemedText type="smallBold" style={[styles.label, styles.labelLeft, value ? styles.labelVisible : styles.labelHidden]}>ON</ThemedText>
       <ThemedText type="smallBold" style={[styles.label, styles.labelRight, value ? styles.labelHidden : styles.labelVisible]}>OFF</ThemedText>
-      <Animated.View style={[styles.thumb, thumbStyle]} />
+      <Animated.View style={[styles.thumb, { backgroundColor: theme.surface }, thumbStyle]} />
     </Pressable>
   );
 }
@@ -45,12 +53,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  trackOn: {
-    backgroundColor: '#22C55E',
-  },
-  trackOff: {
-    backgroundColor: '#D1FAE5',
-  },
   disabled: {
     opacity: 0.55,
   },
@@ -58,7 +60,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 999,
-    backgroundColor: '#FFFFFF',
     position: 'absolute',
     left: 8,
     top: 8,

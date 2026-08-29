@@ -1,10 +1,11 @@
 import { router } from 'expo-router';
 import { useMemo } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
+import ScreenContainer from '@/components/layout/screen-container';
 import LanguageGrid from '@/components/onboarding/language-grid';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import { Space } from '@/constants/theme';
 import { useUpdatePreferences } from '@/hooks/mutations/use-update-preferences';
 import { usePreferences } from '@/hooks/queries/use-preferences';
 import i18n from '@/services/i18n';
@@ -22,36 +23,17 @@ export default function LanguageSettingsScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title">Language</ThemedText>
-        <ThemedText type="small">Choose the app language.</ThemedText>
-      </View>
-
+    <ScreenContainer scroll edges={['bottom']} contentContainerStyle={styles.content}>
+      <ThemedText type="small" themeColor="textSecondary">
+        Choose the app language.
+      </ThemedText>
       <LanguageGrid selectedLanguage={selectedLanguage} onSelect={handleSelect} />
-
-      <Pressable style={styles.backButton} onPress={() => router.back()}>
-        <ThemedText type="smallBold">Back</ThemedText>
-      </Pressable>
-    </ThemedView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-  },
-  header: {
-    gap: 8,
-    marginBottom: 20,
-  },
-  backButton: {
-    marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    backgroundColor: '#E5E7EB',
-    alignSelf: 'flex-start',
+  content: {
+    gap: Space.xl,
   },
 });

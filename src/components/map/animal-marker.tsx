@@ -24,7 +24,13 @@ export default function AnimalMarker({ position, onPress }: AnimalMarkerProps) {
   }
 
   return (
-    <Marker coordinate={{ latitude: position.lat, longitude: position.lng }} onPress={onPress}>
+    <Marker
+      coordinate={{ latitude: position.lat, longitude: position.lng }}
+      onPress={onPress}
+      // Custom marker children are re-rasterized on every frame while this is true,
+      // which makes pins flicker or render blank on Android.
+      tracksViewChanges={false}
+    >
       <View style={[styles.pin, { backgroundColor: MapStatusColors[position.status] }]}> 
         <Text style={styles.paw}>🐾</Text>
       </View>

@@ -1,7 +1,7 @@
 import type { User } from '@/types/user';
 import type { CollarDiagnostic, Preferences } from '@/types/settings';
 
-import { apiGet, apiPatch } from './client';
+import { apiGet, apiPatch, getAuthToken, resolveBaseUrl } from './client';
 
 export function getPreferences() {
   return apiGet<Preferences>('/me/preferences');
@@ -23,11 +23,14 @@ export async function uploadAvatar(uri: string) {
     type: 'image/jpeg',
   } as unknown as Blob);
 
-  const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL ?? 'https://api.herdos.app'}/me/avatar`, {
+  const token = await getAuthToken();
+  const response = await fetch(`${resolveBaseUrl()}/me/avatar`, {
     method: 'POST',
     body: formData,
     headers: {
       Accept: 'application/json',
+      // Content-Type is deliberately omitted so fetch sets the multipart boundary.
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 

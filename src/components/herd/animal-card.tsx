@@ -1,8 +1,10 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import Avatar from '@/components/herd/avatar';
 import StatusBadge from '@/components/herd/status-badge';
 import { ThemedText } from '@/components/themed-text';
+import { Card } from '@/components/ui/card';
+import { Space } from '@/constants/theme';
 import type { Animal } from '@/types/animal';
 
 type AnimalCardProps = {
@@ -12,34 +14,34 @@ type AnimalCardProps = {
 
 export default function AnimalCard({ animal, onPress }: AnimalCardProps) {
   return (
-    <Pressable style={styles.container} onPress={onPress}>
+    <Card variant="elevated" onPress={onPress} style={styles.container}>
       <View style={styles.row}>
         <Avatar photoUrl={animal.photoUrl} name={animal.name} size={52} />
         <View style={styles.details}>
-          <ThemedText type="subtitle">{animal.name}</ThemedText>
-          <ThemedText type="small">{animal.breed}, {animal.ageYears} yrs</ThemedText>
+          <ThemedText type="bodyBold" numberOfLines={1}>
+            {animal.name}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {animal.breed}, {animal.ageYears} yrs
+          </ThemedText>
         </View>
         <StatusBadge status={animal.status} />
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 16,
-    borderBottomColor: '#E5E7EB',
-    borderBottomWidth: 1,
-    backgroundColor: '#FFFFFF',
-    marginBottom: 12,
+    marginBottom: Space.md,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Space.md,
   },
   details: {
     flex: 1,
-    gap: 4,
+    gap: Space.xs,
   },
 });

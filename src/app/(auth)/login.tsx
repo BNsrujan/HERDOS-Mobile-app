@@ -1,10 +1,13 @@
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import ScreenContainer from '@/components/layout/screen-container';
+import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { MaxContentWidth, Space } from '@/constants/theme';
 import { checkPhone } from '@/services/api/user';
 
 export default function Login() {
@@ -25,10 +28,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const res = await checkPhone({ name: name.trim() || undefined, phone });
+      await checkPhone({ name: name.trim() || undefined, phone });
       await AsyncStorage.setItem('herdos:authPhone', phone);
       await AsyncStorage.setItem('herdos:authName', name.trim());
-      router.push('./verify-otp');
+      router.push('/(auth)/verify-otp');
     } catch (err) {
       console.error('login error', err);
       setError('Unable to submit login. Please try again.');
@@ -38,76 +41,55 @@ export default function Login() {
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <ScreenContainer style={styles.container}>
       <View style={styles.form}>
-        <ThemedText type="subtitle">Sign in</ThemedText>
-        <TextInput
+        <ThemedText type="title">Sign in</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          We will text you a one-time code to confirm your number.
+        </ThemedText>
+
+        <Input
+          label="Full name"
           placeholder="Full name"
           value={name}
           onChangeText={setName}
-          style={styles.input}
-          keyboardType="default"
+          autoCapitalize="words"
+          textContentType="name"
         />
-        <TextInput
+        <Input
+          label="Phone number"
           placeholder="Phone number"
           value={phoneNumber}
           onChangeText={setPhoneNumber}
-          style={styles.input}
           keyboardType="phone-pad"
+          textContentType="telephoneNumber"
+          errorText={error ?? undefined}
         />
-        {error ? <ThemedText type="small" style={styles.errorText}>{error}</ThemedText> : null}
 
-        <View style={styles.actions}>
-          <Pressable style={styles.primaryButton} onPress={handleSubmit} disabled={loading}>
-            <ThemedText type="small" style={styles.buttonText}>{loading ? 'Please wait...' : 'Submit'}</ThemedText>
-          </Pressable>
-        </View>
+        <Button
+          size="lg"
+          fullWidth
+          label="Submit"
+          loading={loading}
+          onPress={handleSubmit}
+          style={styles.submit}
+        />
       </View>
-    </ThemedView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
   },
   form: {
     width: '100%',
-    maxWidth: 420,
-    gap: 12,
+    maxWidth: MaxContentWidth / 2,
+    alignSelf: 'center',
+    gap: Space.lg,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: 'transparent',
+  submit: {
+    marginTop: Space.sm,
   },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    gap: 12,
-  },
-  primaryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: '#1A3C2A',
-  },
-  secondaryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    backgroundColor: '#E5E7EB',
-  },
-  errorText: {
-    color: '#EF4444',
-  },
-  buttonText:{
-    color: '#fff',
-  }
 });

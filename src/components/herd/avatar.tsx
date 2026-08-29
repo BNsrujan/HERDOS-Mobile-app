@@ -1,6 +1,7 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { AvatarColors } from '@/constants/theme';
+import { AvatarColors, Radius } from '@/constants/theme';
 
 const nameHash = (name: string) => {
   let hash = 0;
@@ -19,33 +20,45 @@ type AvatarProps = {
   photoUrl?: string;
   name: string;
   size?: number;
+  shape?: 'circle' | 'rounded';
 };
 
-export default function Avatar({ photoUrl, name, size = 56 }: AvatarProps) {
-  const color = getAvatarColor(name);
+export default function Avatar({ photoUrl, name, size = 56, shape = 'circle' }: AvatarProps) {
+  const borderRadius = shape === 'circle' ? size / 2 : Radius.lg;
 
   if (photoUrl) {
-    return <Image source={{ uri: photoUrl }} style={[styles.photo, { width: size, height: size, borderRadius: size / 2 }]} />;
+    return (
+      <Image
+        source={{ uri: photoUrl }}
+        style={{ width: size, height: size, borderRadius }}
+        contentFit="cover"
+        transition={150}
+        accessibilityLabel={name}
+      />
+    );
   }
 
   return (
-    <View style={[styles.fallback, { width: size, height: size, borderRadius: size / 2, backgroundColor: color }]}> 
-      <Text style={styles.initial}>{name.charAt(0).toUpperCase()}</Text>
+    <View
+      style={[
+        styles.fallback,
+        { width: size, height: size, borderRadius, backgroundColor: getAvatarColor(name) },
+      ]}
+      accessibilityLabel={name}
+    >
+      {/* Fixed white: the fallback background is always a saturated avatar color. */}
+      <Text style={[styles.initial, { fontSize: size * 0.4 }]}>{name.charAt(0).toUpperCase()}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  photo: {
-    resizeMode: 'cover',
-  },
   fallback: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   initial: {
-    color: '#fff',
-    fontSize: 24,
+    color: '#FFFFFF',
     fontWeight: '700',
   },
 });

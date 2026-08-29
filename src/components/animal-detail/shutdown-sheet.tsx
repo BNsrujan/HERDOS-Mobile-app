@@ -1,12 +1,15 @@
 import { BottomSheetBackdrop, BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useQueryClient } from '@tanstack/react-query';
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import PowerToggle from '@/components/animal-detail/power-toggle';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
 import Icon from '@/components/ui/icon';
+import { AppPressable } from '@/components/ui/pressable';
+import { MinTouchTarget, Space } from '@/constants/theme';
 import { useShutdownCollar } from '@/hooks/mutations/use-shutdown-collar';
 
 export type ShutdownSheetHandle = {
@@ -50,13 +53,7 @@ const ShutdownSheet = forwardRef<ShutdownSheetHandle, ShutdownSheetProps>(functi
       ref={sheetRef}
       snapPoints={snapPoints}
       enablePanDownToClose
-      backdropComponent={(props) => (
-        <BottomSheetBackdrop
-          {...props}
-          opacity={0.5}
-          pressBehavior="close"
-        />
-      )}
+      backdropComponent={(props) => <BottomSheetBackdrop {...props} opacity={0.5} pressBehavior="close" />}
       onChange={(index) => {
         setIsOpen(index >= 0);
       }}
@@ -66,15 +63,21 @@ const ShutdownSheet = forwardRef<ShutdownSheetHandle, ShutdownSheetProps>(functi
         setError(null);
       }}
     >
-      <ThemedView style={styles.sheet}>
+      <ThemedView type="surfaceElevated" style={styles.sheet}>
         <View style={styles.headerRow}>
-          <ThemedText type="subtitle">Shut Down your device</ThemedText>
-          <Pressable style={styles.closeButton} onPress={() => sheetRef.current?.dismiss()}>
+          <ThemedText type="heading">Shut down your device</ThemedText>
+          <AppPressable
+            style={styles.closeButton}
+            accessibilityLabel="Close"
+            onPress={() => sheetRef.current?.dismiss()}
+          >
             <Icon name="close" />
-          </Pressable>
+          </AppPressable>
         </View>
 
-        <ThemedText type="small">This will power off {animalName}'s collar and stop tracking.</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary">
+          This will power off {animalName}&apos;s collar and stop tracking.
+        </ThemedText>
 
         <View style={styles.toggleWrap}>
           <PowerToggle value={powered} onChange={(next) => {
@@ -86,12 +89,15 @@ const ShutdownSheet = forwardRef<ShutdownSheetHandle, ShutdownSheetProps>(functi
 
         {showConfirm ? (
           <>
-            <ThemedText type="small" style={styles.warningText}>
+            <ThemedText type="small" themeColor="onWarningSubtle">
               {animalName} will go offline and stop sending alerts until manually restarted.
             </ThemedText>
-            <Pressable
-              style={styles.confirmButton}
-              disabled={shutdownMutation.isPending}
+            <Button
+              size="lg"
+              fullWidth
+              variant="dangerOutline"
+              label="Confirm Shutdown"
+              loading={shutdownMutation.isPending}
               onPress={() => {
                 shutdownMutation.mutate(animalId, {
                   onSuccess: async () => {
@@ -99,18 +105,16 @@ const ShutdownSheet = forwardRef<ShutdownSheetHandle, ShutdownSheetProps>(functi
                     sheetRef.current?.dismiss();
                   },
                   onError: () => {
-                    setError('Couldn’t shut down the collar — try again');
+                    setError("Couldn't shut down the collar — try again");
                   },
                 });
               }}
-            >
-              {shutdownMutation.isPending ? (
-                <ActivityIndicator color="#DC2626" />
-              ) : (
-                <ThemedText type="smallBold" style={styles.confirmButtonText}>Confirm Shutdown</ThemedText>
-              )}
-            </Pressable>
-            {error ? <ThemedText type="small" style={styles.errorText}>{error}</ThemedText> : null}
+            />
+            {error ? (
+              <ThemedText type="small" themeColor="danger">
+                {error}
+              </ThemedText>
+            ) : null}
           </>
         ) : null}
       </ThemedView>
@@ -123,35 +127,23 @@ export default ShutdownSheet;
 const styles = StyleSheet.create({
   sheet: {
     flex: 1,
-    padding: 20,
-    gap: 16,
+    padding: Space.xl,
+    gap: Space.lg,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  closeButton: {
+    width: MinTouchTarget,
+    height: MinTouchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: -12,
+  },
   toggleWrap: {
     alignItems: 'center',
-    paddingVertical: 8,
-  },
-  warningText: {
-    color: '#B45309',
-  },
-  confirmButton: {
-    borderWidth: 1,
-    borderColor: '#DC2626',
-    borderRadius: 999,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  confirmButtonText: {
-    color: '#DC2626',
-  },
-  errorText: {
-    color: '#EF4444',
-    textAlign: 'center',
+    paddingVertical: Space.sm,
   },
 });

@@ -1,117 +1,69 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, StyleSheet } from 'react-native';
 
 import AnimalCard from '@/components/herd/animal-card';
 import FilterChips from '@/components/herd/filter-chips';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing, StatusColors } from '@/constants/theme';
+import ScreenContainer from '@/components/layout/screen-container';
+import ScreenHeader from '@/components/layout/screen-header';
+import { Fab } from '@/components/ui/fab';
+import { Input } from '@/components/ui/input';
+import { QueryBoundary } from '@/components/ui/states';
+import { Space } from '@/constants/theme';
 import { useHerd } from '@/hooks/queries/use-herd';
 import type { AnimalStatus } from '@/types/animal';
-import Icon from '@/components/ui/icon';
-
-const initialStatus: AnimalStatus | 'all' = 'all';
 
 export default function HerdScreen() {
   const router = useRouter();
-  const [status, setStatus] = useState<AnimalStatus | 'all'>(initialStatus);
+  const [status, setStatus] = useState<AnimalStatus | 'all'>('all');
   const [search, setSearch] = useState('');
-  const { data, isLoading, isError } = useHerd(status, search);
+  const { data, isLoading, isError, refetch } = useHerd(status, search);
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title">Herd</ThemedText>
-        <TextInput
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search animals..."
-          placeholderTextColor="#9CA3AF"
-          style={styles.searchInput}
-          accessibilityLabel="Search animals"
-        />
-      </View>
-
-      <FilterChips value={status} onChange={setStatus} />
-
-      {isLoading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={StatusColors.healthy} />
-        </View>
-      ) : isError ? (
-        <View style={styles.centered}>
-          <ThemedText type="small">Unable to load animals. Please try again.</ThemedText>
-        </View>
-      ) : !data?.length ? (
-        <View style={styles.centered}>
-          <ThemedText type="small">No animals match your search</ThemedText>
-        </View>
-      ) : (
+    <ScreenContainer
+      hasTabBar
+      hasFab
+      edges={['top']}
+      header={
+        <>
+          <ScreenHeader title="Herd" />
+          <Input
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Search animals..."
+            accessibilityLabel="Search animals"
+            returnKeyType="search"
+            containerStyle={styles.search}
+          />
+          <FilterChips value={status} onChange={setStatus} />
+        </>
+      }
+    >
+      <QueryBoundary
+        isLoading={isLoading}
+        isError={isError}
+        isEmpty={!data?.length}
+        onRetry={refetch}
+        error={{ description: 'Unable to load animals. Please try again.' }}
+        empty={{ title: 'No animals match your search', description: 'Try a different name or filter.' }}
+      >
         <FlatList
           data={data}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <AnimalCard animal={item} onPress={() => router.push(`/animal/${item.id}`)} />
           )}
-          contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         />
-      )}
+      </QueryBoundary>
 
-      <Pressable style={styles.fab} onPress={() => router.push('/animal/new')}>
-        <Icon name="plus" color="#FFFFFF" size={24} />
-      </Pressable>
-    </ThemedView>
+      <Fab icon="plus" onPress={() => router.push('/animal/new')} accessibilityLabel="Add animal" hasTabBar />
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: Spacing.four,
-    backgroundColor: 'transparent',
-  },
-  header: {
-    gap: 12,
-    marginBottom: Spacing.three,
-  },
-  searchInput: {
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: '#F9FAFB',
-    color: '#111827',
-  },
-  list: {
-    // paddingBottom: 120,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: Spacing.four,
-  },
-  fab: {
-    position: 'absolute',
-    right: Spacing.four,
-    bottom: Spacing.four,
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    backgroundColor: StatusColors.healthy,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  fabText: {
-    color: '#ffffff',
-    lineHeight: 46,
+  search: {
+    marginBottom: Space.md,
   },
 });

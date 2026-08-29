@@ -3,6 +3,8 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Button } from '@/components/ui/button';
+import { Space } from '@/constants/theme';
 
 export default function IllnessDetectionScreen() {
   const router = useRouter();
@@ -11,18 +13,14 @@ export default function IllnessDetectionScreen() {
     <View >
     <Image source={require('@/assets/welcoming/welcom2.png')} style={styles.image} />
     <ThemedView style={styles.container} >
-        <ThemedText type="subtitle" style={{ textAlign: 'center' }}>
+        <ThemedText type="title" style={{ textAlign: 'center' }}>
           Know Before It Gets Worse.
         </ThemedText>
         <ThemedText type="small" style={{ textAlign: 'center' }}>
           HerdOS detects illness before symptoms appear, so you can act early.
         </ThemedText>
         <View style={styles.actions}>
-          <Pressable style={styles.primaryButton} onPress={() => router.push('/onboarding/geofence-intro')}>
-            <ThemedText type="link" style={styles.buttonText}>
-              Next
-            </ThemedText>
-          </Pressable>
+          <Button size="lg" label="Next" onPress={() => router.push('/onboarding/geofence-intro')} />
         </View>
     </ThemedView>
     </View>
@@ -46,14 +44,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     marginTop: 24,
-  },
-  primaryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-    backgroundColor: '#1A3C2A',
-  },
-  buttonText: {
-    color: '#FFFFFF',
   },
 });

@@ -1,6 +1,9 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import Avatar from '@/components/herd/avatar';
+import { ThemedText } from '@/components/themed-text';
+import { Card } from '@/components/ui/card';
+import { Space } from '@/constants/theme';
 import type { Animal } from '@/types/animal';
 
 type RecentActivityRowProps = {
@@ -13,14 +16,18 @@ export default function RecentActivityRow({ animals, onSeeMore }: RecentActivity
     <View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {animals.map((animal) => (
-          <View key={animal.id} style={styles.card}>
+          <Card key={animal.id} variant="elevated" padding="md" radius="xl" style={styles.card}>
             <Avatar name={animal.name} photoUrl={animal.photoUrl} size={56} />
-            <Text style={styles.name}>{animal.name}</Text>
-          </View>
+            <ThemedText type="caption" style={styles.name} numberOfLines={1}>
+              {animal.name}
+            </ThemedText>
+          </Card>
         ))}
-        <TouchableOpacity onPress={onSeeMore} style={[styles.card, styles.moreCard]}>
-          <Text style={styles.moreText}>More</Text>
-        </TouchableOpacity>
+        <Card variant="outlined" padding="md" radius="xl" onPress={onSeeMore} style={styles.moreCard}>
+          <ThemedText type="smallBold" themeColor="textSecondary">
+            More
+          </ThemedText>
+        </Card>
       </ScrollView>
     </View>
   );
@@ -28,31 +35,20 @@ export default function RecentActivityRow({ animals, onSeeMore }: RecentActivity
 
 const styles = StyleSheet.create({
   scroll: {
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: Space.md,
+    gap: Space.md,
   },
   card: {
     width: 96,
-    padding: 12,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
-    gap: 8,
+    gap: Space.sm,
   },
   name: {
-    fontSize: 13,
-    color: '#111827',
     textAlign: 'center',
   },
   moreCard: {
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
+    width: 96,
+    alignItems: 'center',
     justifyContent: 'center',
-  },
-  moreText: {
-    color: '#6B7280',
-    fontSize: 14,
-    fontWeight: '700',
   },
 });

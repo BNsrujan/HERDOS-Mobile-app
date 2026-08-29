@@ -1,42 +1,53 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Button } from '@/components/ui/button';
+import { Surface } from '@/components/ui/surface';
+import { Colors, Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 const formatCoordinate = (value: number) => `${value.toFixed(2)}°`;
 
 type LocationCardProps = {
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
   onExpand: () => void;
 };
 
 export default function LocationCard({ lat, lng, onExpand }: LocationCardProps) {
+  const theme = useTheme();
+  const hasFix = lat !== null && lng !== null;
+
   return (
-    <Pressable onPress={onExpand} style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.brandSubtle }]}>
       <View style={styles.overlay} />
-      <View style={styles.marker} />
-      <View style={styles.labelBox}>
-        <ThemedText type="smallBold">Current Location</ThemedText>
-        <ThemedText type="small" style={styles.coordText}>
-          {formatCoordinate(lat)} N, {formatCoordinate(lng)} E
+      {hasFix ? <View style={[styles.marker, { borderColor: Colors.light.surface }]} /> : null}
+
+      {/* Pinned light: this label sits on a darkened map-preview overlay. */}
+      <Surface scheme="light" level="surface" style={styles.labelBox}>
+        <ThemedText type="smallBold" style={{ color: Colors.light.textPrimary }}>
+          Current Location
         </ThemedText>
-      </View>
-      <Pressable onPress={onExpand} style={styles.expandButton}>
-        <ThemedText type="smallBold" style={styles.expandButtonText}>
-          Expand
+        <ThemedText type="small" style={{ color: Colors.light.textSecondary }}>
+          {hasFix ? `${formatCoordinate(lat)} N, ${formatCoordinate(lng)} E` : 'No location reported yet'}
         </ThemedText>
-      </Pressable>
-    </Pressable>
+      </Surface>
+
+      {hasFix ? (
+        <View style={styles.expandWrap}>
+          <Button size="sm" label="Expand" onPress={onExpand} accessibilityLabel="Open on map" />
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     height: 180,
-    borderRadius: 20,
+    borderRadius: Radius.xl,
     overflow: 'hidden',
-    marginBottom: 16,
-    backgroundColor: '#D1FAE5',
+    marginBottom: Space.lg,
     justifyContent: 'flex-end',
   },
   overlay: {
@@ -49,34 +60,22 @@ const styles = StyleSheet.create({
     left: 92,
     width: 20,
     height: 20,
-    borderRadius: 999,
+    borderRadius: Radius.full,
     backgroundColor: '#14B8A6',
     borderWidth: 3,
-    borderColor: '#FFFFFF',
   },
   labelBox: {
     position: 'absolute',
-    left: 16,
-    bottom: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+    left: Space.lg,
+    bottom: Space.lg,
+    paddingHorizontal: Space.md,
+    paddingVertical: Space.sm,
+    borderRadius: Radius.md,
     gap: 2,
   },
-  coordText: {
-    color: '#4B5563',
-  },
-  expandButton: {
+  expandWrap: {
     position: 'absolute',
-    right: 12,
-    bottom: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: 'rgba(17,24,39,0.8)',
-  },
-  expandButtonText: {
-    color: '#fff',
+    right: Space.md,
+    bottom: Space.md,
   },
 });

@@ -1,8 +1,18 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 
-import IconSymbol from '@/components/ui/icon-symbol';
+import Icon from '@/components/ui/icon';
+import { Radius } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type PulseRingsProps = {
   active: boolean;
@@ -14,7 +24,34 @@ const RING_STYLES = [
   { size: 120, opacity: 0.34, delay: 360 },
 ] as const;
 
+/**
+ * Extracted so useAnimatedStyle is not called inside a .map() callback, which
+ * violates the rules of hooks (and the React Compiler is enabled in app.json).
+ */
+function Ring({
+  size,
+  opacity,
+  color,
+  pulse,
+}: {
+  size: number;
+  opacity: number;
+  color: string;
+  pulse: SharedValue<number>;
+}) {
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[styles.ring, { width: size, height: size, opacity, borderColor: color }, animatedStyle]}
+    />
+  );
+}
+
 export default function PulseRings({ active }: PulseRingsProps) {
+  const theme = useTheme();
   const pulse = useSharedValue(1);
 
   useEffect(() => {
@@ -23,16 +60,14 @@ export default function PulseRings({ active }: PulseRingsProps) {
       return;
     }
 
-    const ringAnimation = withSequence(
-      ...RING_STYLES.flatMap(({ delay }, index) => [
+    pulse.value = withSequence(
+      ...RING_STYLES.flatMap(({ delay }) => [
         withDelay(delay, withTiming(1.15, { duration: 420, easing: Easing.inOut(Easing.ease) })),
         withDelay(delay + 420, withTiming(1, { duration: 420, easing: Easing.inOut(Easing.ease) })),
         withDelay(delay + 840, withTiming(1.15, { duration: 420, easing: Easing.inOut(Easing.ease) })),
         withDelay(delay + 1260, withTiming(1, { duration: 420, easing: Easing.inOut(Easing.ease) })),
-      ])
+      ]),
     );
-
-    pulse.value = ringAnimation;
 
     const timeout = setTimeout(() => {
       pulse.value = 1;
@@ -43,21 +78,17 @@ export default function PulseRings({ active }: PulseRingsProps) {
 
   return (
     <View style={styles.container}>
-      {RING_STYLES.map((ring, index) => {
-        const animatedStyle = useAnimatedStyle(() => ({
-          transform: [{ scale: pulse.value }],
-          opacity: ring.opacity,
-        }));
-
-        return (
-          <Animated.View
-            key={ring.size}
-            style={[styles.ring, { width: ring.size, height: ring.size, opacity: ring.opacity }, animatedStyle]}
-          />
-        );
-      })}
-      <View style={styles.centerCircle}>
-        <IconSymbol name="speaker" size={32} color="#22C55E" />
+      {RING_STYLES.map((ring) => (
+        <Ring
+          key={ring.size}
+          size={ring.size}
+          opacity={ring.opacity}
+          color={theme.success}
+          pulse={pulse}
+        />
+      ))}
+      <View style={[styles.centerCircle, { backgroundColor: theme.successSubtle }]}>
+        <Icon name="speaker" size={32} color={theme.success} />
       </View>
     </View>
   );
@@ -73,15 +104,13 @@ const styles = StyleSheet.create({
   },
   ring: {
     position: 'absolute',
-    borderRadius: 999,
+    borderRadius: Radius.full,
     borderWidth: 2,
-    borderColor: '#86EFAC',
   },
   centerCircle: {
     width: 110,
     height: 110,
-    borderRadius: 999,
-    backgroundColor: '#DCFCE7',
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

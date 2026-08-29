@@ -1,4 +1,4 @@
-import * as Localization from 'expo-localization';
+import { getLocales } from 'expo-localization';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -22,11 +22,14 @@ const resources = {
   gu: { translation: gu },
 };
 
+// getLocales() is guaranteed to return at least one entry, ordered by user preference.
+const deviceLanguage = getLocales()[0]?.languageCode ?? 'en';
+
 void i18n.use(initReactI18next).init({
   compatibilityJSON: 'v3',
   resources,
   fallbackLng: 'en',
-  lng: typeof Localization.locale === 'string' ? Localization.locale.split('-')[0] : 'en',
+  lng: deviceLanguage in resources ? deviceLanguage : 'en',
   interpolation: {
     escapeValue: false,
   },

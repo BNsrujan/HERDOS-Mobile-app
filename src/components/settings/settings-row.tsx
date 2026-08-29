@@ -1,11 +1,14 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import IconSymbol, { type IconSymbolName } from '@/components/ui/icon-symbol';
+import Icon, { type IconName } from '@/components/ui/icon';
+import { AppPressable } from '@/components/ui/pressable';
+import { MinTouchTarget, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type SettingsRowProps = {
-  icon: IconSymbolName;
+  icon: IconName;
   label: string;
   right?: ReactNode;
   onPress?: () => void;
@@ -13,17 +16,26 @@ type SettingsRowProps = {
 };
 
 export default function SettingsRow({ icon, label, right, onPress, chevron = false }: SettingsRowProps) {
+  const theme = useTheme();
+
   return (
-    <Pressable onPress={onPress} style={styles.row} disabled={!onPress}>
+    <AppPressable
+      onPress={onPress}
+      disabled={!onPress}
+      minTouchTarget={false}
+      accessibilityRole={onPress ? 'button' : 'none'}
+      accessibilityLabel={label}
+      style={[styles.row, { borderBottomColor: theme.divider }]}
+    >
       <View style={styles.left}>
-        <IconSymbol name={icon} size={18} />
+        <Icon name={icon} size={18} />
         <ThemedText type="smallBold">{label}</ThemedText>
       </View>
       <View style={styles.right}>
         {right}
-        {chevron ? <Icon name="chevron-right" color="#6B7280" size={18} /> : null}
+        {chevron ? <Icon name="chevron-right" size={18} color={theme.textTertiary} /> : null}
       </View>
-    </Pressable>
+    </AppPressable>
   );
 }
 
@@ -32,26 +44,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    gap: Space.md,
+    minHeight: MinTouchTarget,
+    paddingVertical: Space.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
   },
   left: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: Space.sm,
   },
   right: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  icon: {
-    width: 24,
-    textAlign: 'center',
-  },
-  chevron: {
-    fontSize: 18,
+    gap: Space.sm,
   },
 });

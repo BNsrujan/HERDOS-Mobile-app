@@ -1,7 +1,10 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
+import { Card } from '@/components/ui/card';
+import { Space } from '@/constants/theme';
 import type { HerdAlert } from '@/types/alert';
+import { getAlertBody, getAlertTitle } from '@/utils/alert-display';
 
 type CriticalAlertBannerProps = {
   alert?: HerdAlert;
@@ -13,31 +16,18 @@ export default function CriticalAlertBanner({ alert }: CriticalAlertBannerProps)
   }
 
   return (
-    <View style={styles.banner}>
-      <ThemedText type="smallBold" style={styles.title}>
-        Critical panic alert
+    <Card variant="tinted" tone="danger" style={styles.banner}>
+      <ThemedText type="smallBold">Critical panic alert</ThemedText>
+      <ThemedText type="small">
+        {getAlertTitle(alert)} • {getAlertBody(alert)}
       </ThemedText>
-      <ThemedText type="small" style={styles.text}>
-        {alert.animalName} • {alert.message}
-      </ThemedText>
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   banner: {
-    padding: 16,
-    borderRadius: 18,
-    marginBottom: 16,
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FCA5A5',
-  },
-  title: {
-    color: '#B91C1C',
-    marginBottom: 4,
-  },
-  text: {
-    color: '#7F1D1D',
+    gap: Space.xs,
+    marginBottom: Space.lg,
   },
 });

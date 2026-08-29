@@ -1,40 +1,38 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-
-export type IconSymbolName = 'crosshair' | 'refresh' | 'fence';
+import Icon, { type IconName } from '@/components/ui/icon';
+import { AppPressable } from '@/components/ui/pressable';
+import { MinTouchTarget, Radius, Space } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type MapActionButtonProps = {
-  icon: IconSymbolName;
+  icon: IconName;
   onPress: () => void;
+  accessibilityLabel: string;
 };
 
-const iconMap: Record<IconSymbolName, string> = {
-  crosshair: '⌖',
-  refresh: '↻',
-  fence: '▦',
-};
+export default function MapActionButton({ icon, onPress, accessibilityLabel }: MapActionButtonProps) {
+  const theme = useTheme();
 
-export default function MapActionButton({ icon, onPress }: MapActionButtonProps) {
   return (
-    <Pressable style={styles.button} onPress={onPress}>
-      <ThemedText type="smallBold" style={styles.icon}>{iconMap[icon]}</ThemedText>
-    </Pressable>
+    <AppPressable
+      onPress={onPress}
+      accessibilityLabel={accessibilityLabel}
+      minTouchTarget={false}
+      style={[styles.button, { backgroundColor: theme.surfaceInverse }]}
+    >
+      <Icon name={icon} size={20} color={theme.textInverse} />
+    </AppPressable>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    width: 44,
-    height: 44,
-    borderRadius: 999,
-    backgroundColor: '#111827',
+    width: MinTouchTarget,
+    height: MinTouchTarget,
+    borderRadius: Radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
-  },
-  icon: {
-    color: '#FFFFFF',
-    fontSize: 18,
+    marginBottom: Space.sm,
   },
 });

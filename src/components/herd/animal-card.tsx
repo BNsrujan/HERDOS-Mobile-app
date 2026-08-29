@@ -33,7 +33,9 @@ export default function AnimalCard({ animal, onPress }: AnimalCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: Space.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 0,
+    width: '100%',
   },
   row: {
     flexDirection: 'row',

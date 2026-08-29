@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Space.sm,
+    flexWrap: 'nowrap',
   },
   fullWidth: {
     alignSelf: 'stretch',

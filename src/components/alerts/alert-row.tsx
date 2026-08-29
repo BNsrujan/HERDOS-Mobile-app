@@ -15,17 +15,15 @@ type AlertRowProps = {
 };
 
 export default function AlertRow({ alert, onResolve, isResolving }: AlertRowProps) {
-  const style = getAlertPresentation(alert);
+  const { Icon, color } = getAlertPresentation(alert);
   const resolved = Boolean(alert.acknowledged);
 
   return (
     <Card variant={resolved ? 'sunken' : 'elevated'} padding="md" style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.titleRow}>
-          <View style={[styles.iconCircle, { backgroundColor: `${style.color}22` }]}>
-            <ThemedText type="smallBold" style={{ color: style.color }}>
-              {style.icon}
-            </ThemedText>
+          <View style={[styles.iconCircle, { backgroundColor: `${color}22` }]}>
+            <Icon size={16} color={color} strokeWidth={2.25} />
           </View>
           <View style={styles.titleBlock}>
             <ThemedText type="smallBold" numberOfLines={1}>

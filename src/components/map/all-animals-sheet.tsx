@@ -25,7 +25,7 @@ export default function AllAnimalsSheet({ animals, onSelect }: AllAnimalsSheetPr
     <Surface
       scheme="light"
       level="surface"
-      style={[styles.sheet, { paddingBottom: insets.bottom + BottomTabInset + Space.sm }]}
+      style={[styles.sheet, { paddingBottom: insets.bottom }]}
     >
       <View style={styles.header}>
         <ThemedText type="smallBold" style={{ color: Colors.light.textPrimary }}>

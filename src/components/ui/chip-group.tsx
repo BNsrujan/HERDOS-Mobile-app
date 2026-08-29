@@ -79,6 +79,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Space.sm,
+    marginVertical: Space.md,
   },
   chip: {
     flexDirection: 'row',

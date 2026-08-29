@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     gap: Space.md,
   },
   logo: {
-    width: 140,
+    width: 36,
     height: 36,
     resizeMode: 'contain',
   },

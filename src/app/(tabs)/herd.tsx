@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 
 import AnimalCard from '@/components/herd/animal-card';
 import FilterChips from '@/components/herd/filter-chips';
@@ -20,6 +20,7 @@ export default function HerdScreen() {
   const { data, isLoading, isError, refetch } = useHerd(status, search);
 
   return (
+    <View  style={{ flex: 1, backgroundColor: '#F9F9F9' }}> 
     <ScreenContainer
       hasTabBar
       hasFab
@@ -39,13 +40,17 @@ export default function HerdScreen() {
         </>
       }
     >
-      <QueryBoundary
+      <></>
+    </ScreenContainer>
+    <View style={{ flex: 1, backgroundColor: '#F9F9F9' , marginTop: -270 }}>
+    <QueryBoundary
         isLoading={isLoading}
         isError={isError}
         isEmpty={!data?.length}
         onRetry={refetch}
         error={{ description: 'Unable to load animals. Please try again.' }}
         empty={{ title: 'No animals match your search', description: 'Try a different name or filter.' }}
+
       >
         <FlatList
           data={data}
@@ -56,9 +61,10 @@ export default function HerdScreen() {
           showsVerticalScrollIndicator={false}
         />
       </QueryBoundary>
+    </View>
+          <Fab icon="plus" onPress={() => router.push('/animal/new')} accessibilityLabel="Add animal" tone='brand' hasTabBar={false} style={styles.fab} />
 
-      <Fab icon="plus" onPress={() => router.push('/animal/new')} accessibilityLabel="Add animal" />
-    </ScreenContainer>
+   </View>
   );
 }
 
@@ -66,4 +72,7 @@ const styles = StyleSheet.create({
   search: {
     marginBottom: Space.md,
   },
+  fab: {
+    marginBottom: -40,
+  }
 });

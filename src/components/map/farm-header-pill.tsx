@@ -35,7 +35,7 @@ export default function FarmHeaderPill({ name, onlineCount, totalCount }: FarmHe
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: Space.lg,
+    top: Space['4xl'],
     alignSelf: 'center',
     maxWidth: '90%',
     flexDirection: 'row',

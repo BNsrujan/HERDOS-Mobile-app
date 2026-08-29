@@ -1,4 +1,6 @@
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import PawPrint from 'lucide-react-native/icons/paw-print';
+import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { MapStatusColors } from '@/constants/theme';
 import type { AnimalPosition } from '@/types/animal';
@@ -15,10 +17,19 @@ type AnimalMarkerProps = {
 };
 
 export default function AnimalMarker({ position, onPress }: AnimalMarkerProps) {
+  // The SVG paw paints a frame after mount, so the marker has to re-rasterize once
+  // before it is frozen - snapshotting immediately yields an empty pin on Android.
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTracksViewChanges(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (Platform.OS === 'web') {
     return (
       <View style={[styles.pin, { backgroundColor: MapStatusColors[position.status] }]}> 
-        <Text style={styles.paw}>🐾</Text>
+        <PawPrint size={18} color="#FFFFFF" strokeWidth={2.25} />
       </View>
     );
   }
@@ -27,12 +38,12 @@ export default function AnimalMarker({ position, onPress }: AnimalMarkerProps) {
     <Marker
       coordinate={{ latitude: position.lat, longitude: position.lng }}
       onPress={onPress}
-      // Custom marker children are re-rasterized on every frame while this is true,
-      // which makes pins flicker or render blank on Android.
-      tracksViewChanges={false}
+      // Leaving this true permanently re-rasterizes every frame and makes pins
+      // flicker on Android, so it is flipped off once the icon has drawn.
+      tracksViewChanges={tracksViewChanges}
     >
       <View style={[styles.pin, { backgroundColor: MapStatusColors[position.status] }]}> 
-        <Text style={styles.paw}>🐾</Text>
+        <PawPrint size={18} color="#FFFFFF" strokeWidth={2.25} />
       </View>
     </Marker>
   );
@@ -47,8 +58,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#FFFFFF',
-  },
-  paw: {
-    fontSize: 12,
   },
 });

@@ -1,8 +1,12 @@
+import TriangleAlert from 'lucide-react-native/icons/triangle-alert';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import type { Animal, AnimalPosition } from '@/types/animal';
 import { formatRelativeTime } from '@/utils/format-time';
+
+// Fixed rather than themed: the callout is a pinned-dark card over satellite imagery.
+const WARNING_COLOR = '#F97316';
 
 type AnimalCalloutProps = {
   animal: Animal;
@@ -16,7 +20,7 @@ export default function AnimalCallout({ animal, position }: AnimalCalloutProps) 
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <ThemedText type="smallBold" style={styles.name}>{animal.name}</ThemedText>
-        {showWarning ? <ThemedText type="smallBold" style={styles.warning}>⚠</ThemedText> : null}
+        {showWarning ? <TriangleAlert size={14} color={WARNING_COLOR} strokeWidth={2.25} /> : null}
       </View>
       <ThemedText type="small" style={styles.status}>
         {position.status === 'alert' ? 'Needs attention' : 'Active and moving'}
@@ -48,9 +52,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
-  },
-  warning: {
-    color: '#F97316',
   },
   time: {
     color: '#9CA3AF',

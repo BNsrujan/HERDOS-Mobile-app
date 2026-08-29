@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Icon, { type IconName } from '@/components/ui/icon';
@@ -14,13 +14,15 @@ export type FabProps = {
   tone?: 'accent' | 'brand';
   /** Set when the FAB sits on a screen inside the tab navigator. */
   hasTabBar?: boolean;
+  style?: StyleProp<ViewStyle>;
+
 };
 
 /**
  * Owns its own bottom clearance so it can never sit under the tab bar or the home
  * indicator - previously each screen guessed a different offset.
  */
-export function Fab({ icon, onPress, accessibilityLabel, tone = 'accent', hasTabBar = false }: FabProps) {
+export function Fab({ icon, onPress, accessibilityLabel, tone = 'brand', hasTabBar = false ,style   }: FabProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -38,6 +40,7 @@ export function Fab({ icon, onPress, accessibilityLabel, tone = 'accent', hasTab
           backgroundColor: background,
           bottom: insets.bottom + (hasTabBar ? BottomTabInset : 0) + Space.lg,
         },
+        style
       ]}
     >
       <Icon name={icon} color={foreground} size={24} />
@@ -55,6 +58,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     ...Elevation.fab,
-    marginBottom:-38
   },
+
 });

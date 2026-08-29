@@ -97,11 +97,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Space.md,
     height:'100%',
-    marginBottom:3
+    width:'100%',
   },
   stateCard: {
     gap: Space.sm,
     alignItems: 'flex-start',
-    
   },
 });

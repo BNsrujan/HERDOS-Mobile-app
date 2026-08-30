@@ -27,6 +27,8 @@ export interface AnimalDetail extends Animal {
   ruminationHours: number | null;
   lastKnownLat: number | null;
   lastKnownLng: number | null;
+  /** Metres walked so far in the farm-local day. */
+  distanceTodayMeters: number | null;
 }
 
 export interface ActivitySegment {

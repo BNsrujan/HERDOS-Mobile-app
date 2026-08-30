@@ -25,12 +25,19 @@ export default function HealthSummaryCard({ healthy, watch, alert }: HealthSumma
       <View style={styles.stats}>
         {STATS.map((stat) => (
           <View key={stat.key} style={[styles.statItem, { backgroundColor: stat.color }]}>
-            <View style={[styles.dot , { backgroundColor: stat.color }]} />
             {/* Three columns share the row, so a 4-digit count must shrink to fit. */}
-            <ThemedText type="display" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+            <ThemedText
+              type="display"
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.6}
+              style={styles.statValue}
+            >
               {values[stat.key]}
             </ThemedText>
-            <ThemedText type="small">{stat.label}</ThemedText>
+            <ThemedText type="small" style={styles.statLabel}>
+              {stat.label}
+            </ThemedText>
           </View>
         ))}
       </View>
@@ -54,8 +61,15 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: Space.xs,
-    padding:4,
-    borderRadius:8
+    padding: Space.xs,
+    borderRadius: Radius.sm,
   },
-
+  // Fixed white: the tile behind is always a saturated status colour, so this
+  // must not follow the theme's text colour.
+  statValue: {
+    color: '#FFFFFF',
+  },
+  statLabel: {
+    color: '#FFFFFF',
+  },
 });

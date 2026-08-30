@@ -7,6 +7,8 @@ import AlertHistoryItem from '@/components/animal-detail/alert-history-item';
 import CollarActions from '@/components/animal-detail/collar-actions';
 import LocateSheet, { type LocateSheetHandle } from '@/components/animal-detail/locate-sheet';
 import LocationCard from '@/components/animal-detail/location-card';
+import FixQualityRow from '@/components/animal-detail/fix-quality-row';
+import MovementCard from '@/components/animal-detail/movement-card';
 import ShutdownSheet, { type ShutdownSheetHandle } from '@/components/animal-detail/shutdown-sheet';
 import VitalsRow from '@/components/animal-detail/vitals-row';
 import ScreenContainer from '@/components/layout/screen-container';
@@ -22,6 +24,9 @@ import { Radius, Space } from '@/constants/theme';
 import { useActivityTimeline } from '@/hooks/queries/use-activity-timeline';
 import { useAnimalAlertHistory } from '@/hooks/queries/use-animal-alert-history';
 import { useAnimalDetail } from '@/hooks/queries/use-animal-detail';
+import { useAnimalTrack } from '@/hooks/queries/use-animal-track';
+import { useDailyStats } from '@/hooks/queries/use-daily-stats';
+import { useFixQuality } from '@/hooks/queries/use-fix-quality';
 
 export default function AnimalDetailsScreen() {
   const router = useRouter();
@@ -32,6 +37,10 @@ export default function AnimalDetailsScreen() {
   const { data: animal, isLoading, isError, refetch } = useAnimalDetail(id);
   const { data: timelineData } = useActivityTimeline(id);
   const { data: alertHistory = [] } = useAnimalAlertHistory(id);
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const { data: track } = useAnimalTrack(id, { date: today });
+  const { data: dailyStats } = useDailyStats(id, 7);
+  const { data: fixQuality } = useFixQuality(id, 7);
 
   const heroBackground = useMemo(() => (animal ? getAvatarColor(animal.name) : '#2563EB'), [animal]);
 
@@ -41,6 +50,11 @@ export default function AnimalDetailsScreen() {
     }
 
     router.push(`/(tabs)/map?focusAnimalId=${id}`);
+  };
+
+  const handleViewTrail = () => {
+    if (!id) return;
+    router.push(`/(tabs)/map?focusAnimalId=${id}&layer=trail`);
   };
 
   if (isLoading || isError || !animal) {
@@ -98,12 +112,26 @@ export default function AnimalDetailsScreen() {
           ruminationHours={animal.ruminationHours}
         />
 
+        <MovementCard
+          distanceTodayMeters={animal.distanceTodayMeters}
+          todayPoints={track?.points ?? []}
+          series={dailyStats?.series ?? []}
+          coveragePercent={track?.coveragePercent ?? null}
+          onPress={handleViewTrail}
+        />
+
         <LocationCard lat={animal.lastKnownLat} lng={animal.lastKnownLng} onExpand={handleViewOnMap} />
 
         <Card variant="elevated" radius="xl" style={styles.card}>
           <ThemedText type="heading">Today&apos;s Activity</ThemedText>
           <ActivityTimelineBar segments={timelineData?.segments ?? []} />
         </Card>
+
+        {fixQuality && fixQuality.totalFixes > 0 ? (
+          <Card variant="sunken" radius="xl" style={styles.card}>
+            <FixQualityRow quality={fixQuality} />
+          </Card>
+        ) : null}
 
         <CollarActions
           onLocatePress={() => locateSheetRef.current?.present()}

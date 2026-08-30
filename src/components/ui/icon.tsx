@@ -33,7 +33,10 @@ export type IconName =
   | 'edit'
   | 'power'
   | 'location'
-  | 'sound';
+  | 'sound'
+  | 'play'
+  | 'pause'
+  | 'route';
 
 type SymbolSpec = { ios: string; android: string; web: string };
 
@@ -68,6 +71,9 @@ const ICONS: Record<IconName, SymbolSpec> = {
   power: { ios: 'power', android: 'power_settings_new', web: 'power_settings_new' },
   location: { ios: 'mappin', android: 'place', web: 'place' },
   sound: { ios: 'speaker.wave.3', android: 'volume_up', web: 'volume_up' },
+  play: { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' },
+  pause: { ios: 'pause.fill', android: 'pause', web: 'pause' },
+  route: { ios: 'point.topleft.down.curvedto.point.bottomright.up', android: 'route', web: 'route' },
 };
 
 export type IconProps = {

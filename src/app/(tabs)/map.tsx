@@ -25,6 +25,9 @@ import AnimalCallout from '@/components/map/animal-callout';
 import AnimalMarker from '@/components/map/animal-marker';
 import FarmHeaderPill from '@/components/map/farm-header-pill';
 import MapActionButton from '@/components/map/map-action-button';
+import MapLayerToggle, { type MapLayer } from '@/components/map/map-layer-toggle';
+import TrailControls, { type PlaybackSpeed, type TrailRange } from '@/components/map/trail-controls';
+import TrailEndpointMarker from '@/components/map/trail-endpoint-marker';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -37,9 +40,11 @@ import { useUpdateZoneShape } from '@/hooks/mutations/use-update-zone-shape';
 import { useAnimalPositions } from '@/hooks/queries/use-animal-positions';
 import { useFarm } from '@/hooks/queries/use-farm';
 import { useRecentAnimals } from '@/hooks/queries/use-recent-animals';
+import { useAnimalTrack } from '@/hooks/queries/use-animal-track';
 import { useZones } from '@/hooks/queries/use-zones';
 import type { Animal } from '@/types/animal';
 import type { GeofencePoint } from '@/types/zone';
+import { activityColor, toActivitySegments } from '@/utils/track-display';
 
 // Used when /farm is unavailable so the map still renders. Matches the seeded farm.
 const FALLBACK_FARM_CENTER = { lat: 13.4168, lng: 75.2588 };
@@ -53,11 +58,12 @@ export default function MapScreen() {
   const { data: positions, isLoading: positionsLoading, isError: positionsError, refetch: refetchPositions } = useAnimalPositions();
   const { data: recentAnimals = [] } = useRecentAnimals(10);
   const { data: zones = [] } = useZones();
-  const { editZoneId, createZone, focusAnimalId, focusZoneId } = useLocalSearchParams<{
+  const { editZoneId, createZone, focusAnimalId, focusZoneId, layer: layerParam } = useLocalSearchParams<{
     editZoneId?: string;
     createZone?: string;
     focusAnimalId?: string;
     focusZoneId?: string;
+    layer?: string;
   }>();
   const createZoneMutation = useCreateZone();
   const updateZoneShapeMutation = useUpdateZoneShape();
@@ -65,6 +71,75 @@ export default function MapScreen() {
   const [draftPoints, setDraftPoints] = useState<GeofencePoint[]>([]);
   const [nameModalVisible, setNameModalVisible] = useState(false);
   const [zoneName, setZoneName] = useState('');
+
+  // ---- Trail layer -------------------------------------------------------
+  const [layer, setLayer] = useState<MapLayer>(layerParam === 'trail' ? 'trail' : 'live');
+  const [trailRange, setTrailRange] = useState<TrailRange>('today');
+  const [cursor, setCursor] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState<PlaybackSpeed>(1);
+
+  const trailWindow = useMemo(() => {
+    const now = new Date();
+    if (trailRange === '7d') {
+      const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return { from: from.toISOString(), to: now.toISOString() };
+    }
+    const day = new Date(now);
+    if (trailRange === 'yesterday') day.setDate(day.getDate() - 1);
+    return { date: day.toISOString().slice(0, 10) };
+  }, [trailRange]);
+
+  const { data: track, isLoading: trailLoading } = useAnimalTrack(
+    selectedAnimalId ?? undefined,
+    trailWindow,
+    layer === 'trail',
+  );
+
+  const trailSegments = useMemo(
+    () => (track ? toActivitySegments(track.points) : []),
+    [track],
+  );
+
+  // Playback advances the cursor along the path. The interval scales with the
+  // chosen speed and is cleared whenever playback stops or the track changes.
+  useEffect(() => {
+    if (!playing || !track || track.points.length < 2) return undefined;
+
+    const interval = setInterval(() => {
+      setCursor((current) => {
+        if (current >= track.points.length - 1) {
+          setPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, Math.max(16, 120 / speed));
+
+    return () => clearInterval(interval);
+  }, [playing, speed, track]);
+
+  // A new track invalidates the old cursor position.
+  useEffect(() => {
+    setCursor(0);
+    setPlaying(false);
+  }, [track?.animalId, track?.from]);
+
+  // Frame the whole path when it loads, so the trail is never off-screen.
+  useEffect(() => {
+    if (layer !== 'trail' || !track?.points.length || !mapRef.current) return;
+
+    mapRef.current.fitToCoordinates(
+      track.points.map((p) => ({ latitude: p.lat, longitude: p.lng })),
+      { edgePadding: { top: 120, right: 60, bottom: 320, left: 60 }, animated: true },
+    );
+  }, [layer, track]);
+
+  const closeTrail = useCallback(() => {
+    setLayer('live');
+    setPlaying(false);
+    setCursor(0);
+  }, []);
 
   const initialRegion = useMemo<Region>(() => {
     const center = farm ?? FALLBACK_FARM_CENTER;
@@ -365,10 +440,42 @@ export default function MapScreen() {
           </Marker>
         ))}
 
-        {positions?.map((position) => (
+        {/* Trail: one Polyline per activity run, so the path itself shows what the
+            animal was doing rather than needing a legend. */}
+        {layer === 'trail' && trailSegments.map((segment, index) => (
+          <Polyline
+            key={`trail-${index}`}
+            coordinates={segment.points.map((p) => ({ latitude: p.lat, longitude: p.lng }))}
+            strokeColor={activityColor(segment.activity)}
+            strokeWidth={5}
+            zIndex={2}
+          />
+        ))}
+
+        {layer === 'trail' && track && track.points.length > 1 ? (
+          <>
+            <TrailEndpointMarker lat={track.points[0].lat} lng={track.points[0].lng} kind="start" />
+            <TrailEndpointMarker
+              lat={track.points[track.points.length - 1].lat}
+              lng={track.points[track.points.length - 1].lng}
+              kind="end"
+            />
+            {track.points[cursor] ? (
+              <TrailEndpointMarker
+                lat={track.points[cursor].lat}
+                lng={track.points[cursor].lng}
+                kind="cursor"
+              />
+            ) : null}
+          </>
+        ) : null}
+
+        {/* Live markers are the base layer; hidden while a trail is on screen so
+            the path stays readable. */}
+        {layer !== 'trail' && positions?.map((position) => (
           <AnimalMarker key={position.animalId} position={position} onPress={() => setSelectedAnimalId(position.animalId)} />
         ))}
-        {selectedPosition && selectedAnimal ? (
+        {layer !== 'trail' && selectedPosition && selectedAnimal ? (
           <Marker coordinate={{ latitude: selectedPosition.lat, longitude: selectedPosition.lng }} anchor={{ x: 0.5, y: 1 }}>
             <AnimalCallout animal={selectedAnimal} position={selectedPosition} />
           </Marker>
@@ -452,7 +559,33 @@ export default function MapScreen() {
         </View>
       </Modal>
 
-      <AllAnimalsSheet animals={recentAnimals} onSelect={handleSelectAnimal} />
+      {!isDraftMode ? (
+        <View style={styles.layerRail}>
+          {/* Graze / Range / Signal land in later phases. */}
+          <MapLayerToggle value={layer} onChange={setLayer} disabled={['graze', 'range', 'signal']} />
+        </View>
+      ) : null}
+
+      {layer === 'trail' && track ? (
+        <TrailControls
+          track={track}
+          range={trailRange}
+          onRangeChange={setTrailRange}
+          cursor={cursor}
+          onCursorChange={setCursor}
+          playing={playing}
+          onTogglePlay={() => setPlaying((v) => !v)}
+          speed={speed}
+          onSpeedChange={setSpeed}
+          onClose={closeTrail}
+        />
+      ) : layer === 'trail' && trailLoading ? (
+        <View style={styles.trailLoading}>
+          <LoadingState size="sm" label="Loading trail" />
+        </View>
+      ) : layer !== 'trail' ? (
+        <AllAnimalsSheet animals={recentAnimals} onSelect={handleSelectAnimal} />
+      ) : null}
     </View>
   );
 }
@@ -491,6 +624,22 @@ const styles = StyleSheet.create({
   },
   flexButton: {
     flex: 1,
+  },
+  layerRail: {
+    position: 'absolute',
+    left: Space.lg,
+    right: Space.lg,
+    bottom: 150,
+    alignItems: 'center',
+    zIndex: 4,
+  },
+  trailLoading: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingBottom: 120,
+    zIndex: 5,
   },
   modalBackdrop: {
     flex: 1,

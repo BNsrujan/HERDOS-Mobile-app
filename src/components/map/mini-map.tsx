@@ -1,5 +1,6 @@
 import { Platform, StyleSheet, View } from 'react-native';
 
+import { MAP_PROVIDER } from '@/constants/maps';
 import { Radius } from '@/constants/theme';
 import type { TrackPoint } from '@/types/track';
 import { activityColor, toActivitySegments } from '@/utils/track-display';
@@ -49,7 +50,7 @@ export default function MiniMap({ points, height = 140 }: MiniMapProps) {
   return (
     <View style={[styles.container, { height }]} pointerEvents="none">
       <MapView
-        provider="google"
+        provider={MAP_PROVIDER}
         style={StyleSheet.absoluteFill}
         mapType="satellite"
         initialRegion={region}

@@ -10,9 +10,6 @@
     "ios": {
       "bundleIdentifier": "com.herdos.app",
       "icon": "./assets/images/logo-glow.png",
-      "config": {
-        "googleMapsApiKey": "AIzaSyCiKtrtOiPU_h0bY0BSOQivqzuJRwHGpJs"
-      },
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }

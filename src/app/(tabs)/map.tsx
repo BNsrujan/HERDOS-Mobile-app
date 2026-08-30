@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/states';
+import { MAP_PROVIDER, SUPPORTS_HEATMAP } from '@/constants/maps';
 import { Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useCreateZone } from '@/hooks/mutations/use-create-zone';
@@ -111,7 +112,7 @@ export default function MapScreen() {
 
   // Each layer fetches only while it is the visible one.
   const { data: restSpots } = useRestSpots(selectedAnimalId ?? undefined, 7, layer === 'trail');
-  const { data: heatmap } = useGrazingHeatmap({}, layer === 'graze');
+  const { data: heatmap } = useGrazingHeatmap({}, layer === 'graze' && SUPPORTS_HEATMAP);
   const { data: homeRange } = useHomeRange(selectedAnimalId ?? undefined, '30d', layer === 'range');
   const { data: coverage } = useLoraCoverage(layer === 'signal');
 
@@ -363,7 +364,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <MapView
         ref={mapRef}
-        provider="google"
+        provider={MAP_PROVIDER}
         style={styles.map}
         mapType="satellite"
         initialRegion={initialRegion}
@@ -495,7 +496,7 @@ export default function MapScreen() {
           <RestSpotMarker key={spot.id} spot={spot} />
         ))}
 
-        {layer === 'graze' && heatmap && heatmap.points.length > 0 ? (
+        {layer === 'graze' && SUPPORTS_HEATMAP && heatmap && heatmap.points.length > 0 ? (
           <Heatmap
             points={heatmap.points.map((p) => ({
               latitude: p.lat,
@@ -666,7 +667,11 @@ export default function MapScreen() {
 
       {!isDraftMode ? (
         <View style={styles.layerRail}>
-          <MapLayerToggle value={layer} onChange={setLayer} />
+          <MapLayerToggle
+            value={layer}
+            onChange={setLayer}
+            disabled={SUPPORTS_HEATMAP ? [] : ['graze']}
+          />
         </View>
       ) : null}
 

@@ -13,7 +13,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-PUBLIC-API"
+        "EXPO_PUBLIC_API_URL": "https://herdos-backend.onrender.com"
       }
     },
     "production": {
@@ -22,7 +22,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://REPLACE-WITH-YOUR-PUBLIC-API"
+        "EXPO_PUBLIC_API_URL": "https://herdos-backend.onrender.com"
       }
     }
   },

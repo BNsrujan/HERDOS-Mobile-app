@@ -2,9 +2,9 @@ import { User } from '@/types/user';
 import { apiGet, apiPost } from './client';
 
 export type CheckPhoneResponse = {
-  exists: boolean;
-  verified?: boolean;
-  otpSent?: boolean;
+  otpSent: boolean;
+  /** Present only when the backend is in console-fallback mode (no SMS provider). */
+  devMode?: boolean;
 };
 
 export async function checkPhone(payload: { name?: string; phone: string }) {

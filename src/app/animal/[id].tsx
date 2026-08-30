@@ -9,6 +9,8 @@ import LocateSheet, { type LocateSheetHandle } from '@/components/animal-detail/
 import LocationCard from '@/components/animal-detail/location-card';
 import FixQualityRow from '@/components/animal-detail/fix-quality-row';
 import MovementCard from '@/components/animal-detail/movement-card';
+import PlacesCard from '@/components/animal-detail/places-card';
+import WaterVisitsCard from '@/components/animal-detail/water-visits-card';
 import ShutdownSheet, { type ShutdownSheetHandle } from '@/components/animal-detail/shutdown-sheet';
 import VitalsRow from '@/components/animal-detail/vitals-row';
 import ScreenContainer from '@/components/layout/screen-container';
@@ -27,6 +29,9 @@ import { useAnimalDetail } from '@/hooks/queries/use-animal-detail';
 import { useAnimalTrack } from '@/hooks/queries/use-animal-track';
 import { useDailyStats } from '@/hooks/queries/use-daily-stats';
 import { useFixQuality } from '@/hooks/queries/use-fix-quality';
+import { useHomeRange } from '@/hooks/queries/use-home-range';
+import { useRestSpots } from '@/hooks/queries/use-rest-spots';
+import { useWaterVisits } from '@/hooks/queries/use-water-visits';
 
 export default function AnimalDetailsScreen() {
   const router = useRouter();
@@ -41,6 +46,9 @@ export default function AnimalDetailsScreen() {
   const { data: track } = useAnimalTrack(id, { date: today });
   const { data: dailyStats } = useDailyStats(id, 7);
   const { data: fixQuality } = useFixQuality(id, 7);
+  const { data: restSpots } = useRestSpots(id, 7);
+  const { data: homeRange } = useHomeRange(id, '30d');
+  const { data: waterVisits } = useWaterVisits(id, 7);
 
   const heroBackground = useMemo(() => (animal ? getAvatarColor(animal.name) : '#2563EB'), [animal]);
 
@@ -55,6 +63,11 @@ export default function AnimalDetailsScreen() {
   const handleViewTrail = () => {
     if (!id) return;
     router.push(`/(tabs)/map?focusAnimalId=${id}&layer=trail`);
+  };
+
+  const handleViewRange = () => {
+    if (!id) return;
+    router.push(`/(tabs)/map?focusAnimalId=${id}&layer=range`);
   };
 
   if (isLoading || isError || !animal) {
@@ -120,6 +133,13 @@ export default function AnimalDetailsScreen() {
           onPress={handleViewTrail}
         />
 
+        <PlacesCard homeRange={homeRange} restSpots={restSpots} onPress={handleViewRange} />
+
+        {/* Only shown once a water zone exists and has produced visits. */}
+        {waterVisits && waterVisits.visits.length > 0 ? (
+          <WaterVisitsCard data={waterVisits} />
+        ) : null}
+
         <LocationCard lat={animal.lastKnownLat} lng={animal.lastKnownLng} onExpand={handleViewOnMap} />
 
         <Card variant="elevated" radius="xl" style={styles.card}>
@@ -132,6 +152,18 @@ export default function AnimalDetailsScreen() {
             <FixQualityRow quality={fixQuality} />
           </Card>
         ) : null}
+
+        <Card variant="elevated" radius="xl" style={styles.card}>
+          <AppPressable
+            onPress={() => router.push(`/animal/trends?id=${id}`)}
+            accessibilityLabel="Open trends and baseline"
+            minTouchTarget={false}
+            style={styles.expandHeader}
+          >
+            <ThemedText type="heading">Trends &amp; baseline</ThemedText>
+            <Icon name="chevron-right" size={18} />
+          </AppPressable>
+        </Card>
 
         <CollarActions
           onLocatePress={() => locateSheetRef.current?.present()}

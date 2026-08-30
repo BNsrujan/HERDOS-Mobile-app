@@ -53,6 +53,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="animal/[id]" />
                 <Stack.Screen name="animal/new" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="animal/trends" />
                 <Stack.Screen name="settings" />
                 <Stack.Screen name="zones" />
               </Stack>

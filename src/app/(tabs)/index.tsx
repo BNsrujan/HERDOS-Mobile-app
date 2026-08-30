@@ -4,6 +4,7 @@ import { Image, StyleSheet, View } from 'react-native';
 
 import AlertRow from '@/components/alerts/alert-row';
 import HealthSummaryCard from '@/components/home/health-summary-card';
+import HerdCohesionCard from '@/components/home/herd-cohesion-card';
 import RecentActivityRow from '@/components/home/recent-activity-row';
 import ScreenContainer from '@/components/layout/screen-container';
 import { ThemedText } from '@/components/themed-text';
@@ -15,6 +16,7 @@ import { LoadingState } from '@/components/ui/states';
 import { MinTouchTarget, Radius, Space } from '@/constants/theme';
 import { useAlerts } from '@/hooks/queries/use-alerts';
 import { useFarm } from '@/hooks/queries/use-farm';
+import { useHerdCohesion } from '@/hooks/queries/use-herd-cohesion';
 import { useHerdSummary } from '@/hooks/queries/use-herd-summary';
 import { useRecentAnimals } from '@/hooks/queries/use-recent-animals';
 import { useResolveAlert } from '@/hooks/queries/use-resolve-alert';
@@ -31,6 +33,7 @@ export default function HomeScreen() {
   const { data: summary } = useHerdSummary();
   const { data: alerts, refetch: refetchAlerts } = useAlerts({ limit: 2, acknowledged: false });
   const { data: recentAnimals } = useRecentAnimals(3);
+  const { data: cohesion } = useHerdCohesion();
   const { data: weather, isFetching: weatherLoading, isError: weatherError } = useWeather();
   const { refetch: refetchFarm } = useFarm();
   const { mutate: resolveAlert, variables: resolvingId, isPending } = useResolveAlert();
@@ -98,6 +101,10 @@ export default function HomeScreen() {
           <LoadingState size="sm" />
         </Card>
       )}
+
+      {cohesion ? (
+        <HerdCohesionCard cohesion={cohesion} onPress={() => router.push('/(tabs)/map')} />
+      ) : null}
 
       <View style={styles.sectionHeader}>
         <ThemedText type="heading">Needs Attention</ThemedText>

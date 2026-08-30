@@ -11,7 +11,10 @@
       "bundleIdentifier": "com.herdos.app",
       "icon": "./assets/images/logo-glow.png",
       "config": {
-        "googleMapsApiKey": "REPLACE_WITH_IOS_GOOGLE_MAPS_KEY"
+        "googleMapsApiKey": "AIzaSyCiKtrtOiPU_h0bY0BSOQivqzuJRwHGpJs"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -37,10 +40,9 @@
       "expo-router",
       [
         "expo-splash-screen",
-        {          
-          
-        "backgroundColor": "#FFFFFF",
-        "image": "./assets/images/splash-icon.png",
+        {
+          "backgroundColor": "#FFFFFF",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain"
         }

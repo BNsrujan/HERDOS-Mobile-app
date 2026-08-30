@@ -10,11 +10,14 @@ import { Card } from '@/components/ui/card';
 import { Fab } from '@/components/ui/fab';
 import { QueryBoundary } from '@/components/ui/states';
 import DangerZoneRow from '@/components/zones/danger-zone-row';
+import RotationPlanCard from '@/components/zones/rotation-plan-card';
 import ZoneCard from '@/components/zones/zone-card';
 import { Space } from '@/constants/theme';
 import { useToggleZone } from '@/hooks/mutations/use-toggle-zone';
 import { useDangerZones } from '@/hooks/queries/use-danger-zones';
+import { useRotationPlans } from '@/hooks/queries/use-rotation-plans';
 import { useZones } from '@/hooks/queries/use-zones';
+import { useAdvanceRotation } from '@/hooks/mutations/use-advance-rotation';
 
 export default function ZonesScreen() {
   const router = useRouter();
@@ -31,6 +34,8 @@ export default function ZonesScreen() {
     refetch: refetchDanger,
   } = useDangerZones();
   const toggleZoneMutation = useToggleZone();
+  const { data: plans = [] } = useRotationPlans();
+  const advanceRotation = useAdvanceRotation();
 
   return (
     <ScreenContainer
@@ -72,6 +77,20 @@ export default function ZonesScreen() {
           />
         ))}
       </QueryBoundary>
+
+      {plans.length ? (
+        <>
+          <SectionHeader title="Rotation" />
+          {plans.map((plan) => (
+            <RotationPlanCard
+              key={plan.id}
+              plan={plan}
+              advancing={advanceRotation.isPending && advanceRotation.variables === plan.id}
+              onAdvance={() => advanceRotation.mutate(plan.id)}
+            />
+          ))}
+        </>
+      ) : null}
 
       <SectionHeader title="Danger Zones" />
 

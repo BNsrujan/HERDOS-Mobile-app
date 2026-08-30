@@ -1,6 +1,18 @@
 export type AlertSeverity = 'low' | 'medium' | 'high';
 
-export type AlertType = 'panic' | 'temperature' | 'tamper' | 'geofence' | 'sound';
+export type AlertType =
+  | 'panic'
+  | 'temperature'
+  | 'tamper'
+  | 'geofence'
+  | 'sound'
+  | 'fence_approach'
+  | 'isolation'
+  | 'off_property'
+  | 'collar_lost'
+  | 'no_water'
+  | 'behavior_anomaly'
+  | 'low_battery';
 
 export type HerdAlert = {
   id: string;
@@ -14,4 +26,5 @@ export type HerdAlert = {
   message?: string;
   acknowledged?: boolean;
   resolvedAt?: string | null;
+  zoneId?: string | null;
 };

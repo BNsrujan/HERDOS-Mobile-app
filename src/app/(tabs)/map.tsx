@@ -9,6 +9,7 @@ let MapView: any;
 let Marker: any;
 let Polygon: any;
 let Polyline: any;
+let Heatmap: any;
 if (Platform.OS !== 'web') {
   // require at runtime so web bundlers won't evaluate native modules
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -17,6 +18,7 @@ if (Platform.OS !== 'web') {
   Marker = RNMaps.Marker;
   Polygon = RNMaps.Polygon;
   Polyline = RNMaps.Polyline;
+  Heatmap = RNMaps.Heatmap;
 }
 
 import ScreenContainer from '@/components/layout/screen-container';
@@ -27,6 +29,9 @@ import FarmHeaderPill from '@/components/map/farm-header-pill';
 import MapActionButton from '@/components/map/map-action-button';
 import MapLayerToggle, { type MapLayer } from '@/components/map/map-layer-toggle';
 import TrailControls, { type PlaybackSpeed, type TrailRange } from '@/components/map/trail-controls';
+import CoverageGrid from '@/components/map/coverage-grid';
+import LayerLegend from '@/components/map/layer-legend';
+import RestSpotMarker from '@/components/map/rest-spot-marker';
 import TrailEndpointMarker from '@/components/map/trail-endpoint-marker';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
@@ -41,6 +46,10 @@ import { useAnimalPositions } from '@/hooks/queries/use-animal-positions';
 import { useFarm } from '@/hooks/queries/use-farm';
 import { useRecentAnimals } from '@/hooks/queries/use-recent-animals';
 import { useAnimalTrack } from '@/hooks/queries/use-animal-track';
+import { useGrazingHeatmap } from '@/hooks/queries/use-grazing-heatmap';
+import { useHomeRange } from '@/hooks/queries/use-home-range';
+import { useLoraCoverage } from '@/hooks/queries/use-lora-coverage';
+import { useRestSpots } from '@/hooks/queries/use-rest-spots';
 import { useZones } from '@/hooks/queries/use-zones';
 import type { Animal } from '@/types/animal';
 import type { GeofencePoint } from '@/types/zone';
@@ -48,6 +57,8 @@ import { activityColor, toActivitySegments } from '@/utils/track-display';
 
 // Used when /farm is unavailable so the map still renders. Matches the seeded farm.
 const FALLBACK_FARM_CENTER = { lat: 13.4168, lng: 75.2588 };
+
+const VALID_LAYERS: MapLayer[] = ['live', 'trail', 'graze', 'range', 'signal'];
 
 export default function MapScreen() {
   const queryClient = useQueryClient();
@@ -73,7 +84,9 @@ export default function MapScreen() {
   const [zoneName, setZoneName] = useState('');
 
   // ---- Trail layer -------------------------------------------------------
-  const [layer, setLayer] = useState<MapLayer>(layerParam === 'trail' ? 'trail' : 'live');
+  const [layer, setLayer] = useState<MapLayer>(
+    VALID_LAYERS.includes(layerParam as MapLayer) ? (layerParam as MapLayer) : 'live',
+  );
   const [trailRange, setTrailRange] = useState<TrailRange>('today');
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -95,6 +108,12 @@ export default function MapScreen() {
     trailWindow,
     layer === 'trail',
   );
+
+  // Each layer fetches only while it is the visible one.
+  const { data: restSpots } = useRestSpots(selectedAnimalId ?? undefined, 7, layer === 'trail');
+  const { data: heatmap } = useGrazingHeatmap({}, layer === 'graze');
+  const { data: homeRange } = useHomeRange(selectedAnimalId ?? undefined, '30d', layer === 'range');
+  const { data: coverage } = useLoraCoverage(layer === 'signal');
 
   const trailSegments = useMemo(
     () => (track ? toActivitySegments(track.points) : []),
@@ -470,6 +489,55 @@ export default function MapScreen() {
           </>
         ) : null}
 
+        {/* Rest spots ride inside the trail rather than hiding behind another
+            toggle: where the animal stopped is part of where it went. */}
+        {layer === 'trail' && restSpots?.spots.map((spot) => (
+          <RestSpotMarker key={spot.id} spot={spot} />
+        ))}
+
+        {layer === 'graze' && heatmap && heatmap.points.length > 0 ? (
+          <Heatmap
+            points={heatmap.points.map((p) => ({
+              latitude: p.lat,
+              longitude: p.lng,
+              weight: p.weight,
+            }))}
+            radius={40}
+            opacity={0.75}
+            gradient={{
+              colors: ['#22C55E', '#EAB308', '#EF4444'],
+              startPoints: [0.15, 0.5, 1],
+              colorMapSize: 256,
+            }}
+          />
+        ) : null}
+
+        {layer === 'range' && homeRange && homeRange.hull.length >= 3 ? (
+          <>
+            <Polygon
+              coordinates={homeRange.hull.map((p) => ({ latitude: p.lat, longitude: p.lng }))}
+              strokeColor="#2563EB"
+              fillColor="rgba(37,99,235,0.12)"
+              strokeWidth={2}
+              tappable={false}
+            />
+            {/* The darker core shows where it ACTUALLY spends time, as opposed to
+                the full extent of where it can roam. */}
+            {homeRange.coreCells.map((cell, index) => (
+              <Marker
+                key={`core-${index}`}
+                coordinate={{ latitude: cell.lat, longitude: cell.lng }}
+                anchor={{ x: 0.5, y: 0.5 }}
+                tracksViewChanges={false}
+              >
+                <View style={styles.coreCell} />
+              </Marker>
+            ))}
+          </>
+        ) : null}
+
+        {layer === 'signal' && coverage ? <CoverageGrid coverage={coverage} /> : null}
+
         {/* Live markers are the base layer; hidden while a trail is on screen so
             the path stays readable. */}
         {layer !== 'trail' && positions?.map((position) => (
@@ -559,10 +627,46 @@ export default function MapScreen() {
         </View>
       </Modal>
 
+      {!isDraftMode && layer !== 'live' && layer !== 'trail' ? (
+        <View style={styles.legendWrap}>
+          {layer === 'graze' && heatmap ? (
+            <LayerLegend
+              title="Grazing density"
+              detail={`${heatmap.totalCells} patches · ${heatmap.from === heatmap.to ? 'today' : `${heatmap.from} to ${heatmap.to}`}`}
+              entries={[
+                { color: '#22C55E', label: 'less' },
+                { color: '#EAB308', label: 'more' },
+                { color: '#EF4444', label: 'most' },
+              ]}
+            />
+          ) : null}
+          {layer === 'range' && homeRange ? (
+            <LayerLegend
+              title="Home range"
+              detail={`${homeRange.areaHectares} ha used · ${homeRange.coreAreaHectares} ha core`}
+              entries={[
+                { color: 'rgba(37,99,235,0.35)', label: 'full range' },
+                { color: 'rgba(37,99,235,0.8)', label: 'core 50%' },
+              ]}
+            />
+          ) : null}
+          {layer === 'signal' && coverage ? (
+            <LayerLegend
+              title="LoRa coverage"
+              detail={`${coverage.cells.length} cells · ${coverage.cellMeters}m grid`}
+              entries={[
+                { color: 'rgba(34,197,94,0.8)', label: `good ≥${coverage.gradeThresholds.good}` },
+                { color: 'rgba(245,158,11,0.8)', label: `fair ≥${coverage.gradeThresholds.fair}` },
+                { color: 'rgba(239,68,68,0.8)', label: 'weak' },
+              ]}
+            />
+          ) : null}
+        </View>
+      ) : null}
+
       {!isDraftMode ? (
         <View style={styles.layerRail}>
-          {/* Graze / Range / Signal land in later phases. */}
-          <MapLayerToggle value={layer} onChange={setLayer} disabled={['graze', 'range', 'signal']} />
+          <MapLayerToggle value={layer} onChange={setLayer} />
         </View>
       ) : null}
 
@@ -632,6 +736,19 @@ const styles = StyleSheet.create({
     bottom: 150,
     alignItems: 'center',
     zIndex: 4,
+  },
+  legendWrap: {
+    position: 'absolute',
+    left: Space.lg,
+    right: Space.lg,
+    bottom: 210,
+    zIndex: 4,
+  },
+  coreCell: {
+    width: 14,
+    height: 14,
+    borderRadius: 3,
+    backgroundColor: 'rgba(37,99,235,0.55)',
   },
   trailLoading: {
     position: 'absolute',

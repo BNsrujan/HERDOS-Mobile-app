@@ -8,6 +8,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MaxContentWidth, Space } from '@/constants/theme';
+import { ApiError } from '@/services/api/client';
 import { checkPhone } from '@/services/api/user';
 
 export default function Login() {
@@ -34,7 +35,14 @@ export default function Login() {
       router.push('/(auth)/verify-otp');
     } catch (err) {
       console.error('login error', err);
-      setError('Unable to submit login. Please try again.');
+      // The API sends a usable reason for rate limits ("please wait before
+      // requesting another code"); a generic message hides it and leaves the
+      // farmer tapping a button that cannot work yet.
+      setError(
+        err instanceof ApiError && err.status === 429
+          ? err.message
+          : 'Unable to submit login. Please try again.',
+      );
     } finally {
       setLoading(false);
     }

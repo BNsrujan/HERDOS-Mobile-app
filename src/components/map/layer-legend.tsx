@@ -1,22 +1,50 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Surface } from '@/components/ui/surface';
-import { Colors, Elevation, Radius, Space } from '@/constants/theme';
+import { Colors, Space } from '@/constants/theme';
 
 type LegendEntry = { color: string; label: string };
 
 type LayerLegendProps = {
   title: string;
   entries: LegendEntry[];
-  /** Optional single-line summary, e.g. "12.4 ha · core 3.1 ha". */
+  /** One-line summary, e.g. "12.4 ha used · 3.1 ha core". */
   detail?: string;
+  /** Peek variant: title and swatches on one line, no detail row. */
+  compact?: boolean;
 };
 
-/** Pinned-light legend card for the analytical map layers. */
-export default function LayerLegend({ title, entries, detail }: LayerLegendProps) {
+/**
+ * Legend for the active data layer.
+ *
+ * Renders INSIDE the bottom sheet, not as a floating card — it inherits the sheet's
+ * pinned-light Surface, so it carries no background, no elevation and no positioning
+ * of its own. As an overlay it used to be a 361x76 transparent view that blocked map
+ * gestures whenever a data layer was on.
+ */
+export default function LayerLegend({ title, entries, detail, compact = false }: LayerLegendProps) {
+  if (compact) {
+    return (
+      <View style={styles.compactRow}>
+        <ThemedText type="smallBold" style={styles.title} numberOfLines={1}>
+          {title}
+        </ThemedText>
+        <View style={styles.swatches}>
+          {entries.map((entry) => (
+            <View key={entry.label} style={[styles.swatch, { backgroundColor: entry.color }]} />
+          ))}
+        </View>
+        {detail ? (
+          <ThemedText type="caption" style={styles.detail} numberOfLines={1}>
+            {detail}
+          </ThemedText>
+        ) : null}
+      </View>
+    );
+  }
+
   return (
-    <Surface scheme="light" level="surface" style={styles.container}>
+    <View style={styles.container}>
       <ThemedText type="smallBold" style={styles.title}>
         {title}
       </ThemedText>
@@ -35,28 +63,35 @@ export default function LayerLegend({ title, entries, detail }: LayerLegendProps
           </View>
         ))}
       </View>
-    </Surface>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: Space.md,
-    paddingVertical: Space.sm,
-    borderRadius: Radius.lg,
     gap: Space.xs,
-    ...Elevation.raised,
   },
+  compactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Space.sm,
+  },
+  // Pinned light: the enclosing sheet is scheme="light" over satellite imagery.
   title: {
     color: Colors.light.textPrimary,
   },
   detail: {
+    flexShrink: 1,
     color: Colors.light.textSecondary,
   },
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Space.md,
+  },
+  swatches: {
+    flexDirection: 'row',
+    gap: 3,
   },
   item: {
     flexDirection: 'row',

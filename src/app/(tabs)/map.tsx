@@ -1,7 +1,9 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import { useSharedValue } from 'react-native-reanimated';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import type { Region } from 'react-native-maps';
 
 // Load react-native-maps only on native platforms to avoid web build-time errors
@@ -22,23 +24,28 @@ if (Platform.OS !== 'web') {
 }
 
 import ScreenContainer from '@/components/layout/screen-container';
-import AllAnimalsSheet from '@/components/map/all-animals-sheet';
+import BrowseSheetContent from '@/components/map/browse-sheet-content';
 import AnimalCallout from '@/components/map/animal-callout';
 import AnimalMarker from '@/components/map/animal-marker';
-import FarmHeaderPill from '@/components/map/farm-header-pill';
+import DraftToolbar from '@/components/map/draft-toolbar';
+import MapContextBar from '@/components/map/map-context-bar';
 import MapActionButton from '@/components/map/map-action-button';
-import MapLayerToggle, { type MapLayer } from '@/components/map/map-layer-toggle';
-import TrailControls, { type PlaybackSpeed, type TrailRange } from '@/components/map/trail-controls';
+import LayersSheet, { type LayersSheetHandle } from '@/components/map/layers-sheet';
+import MapControlRail from '@/components/map/map-control-rail';
+import MapSheet, { type MapSheetHandle } from '@/components/map/map-sheet';
+import ZoneNameSheet, { type ZoneNameSheetHandle } from '@/components/map/zone-name-sheet';
+import TrailSheetContent from '@/components/map/trail-sheet-content';
 import CoverageGrid from '@/components/map/coverage-grid';
 import LayerLegend from '@/components/map/layer-legend';
+import type { MapDataLayer, MapType, PlaybackSpeed, TrailRange } from '@/types/map';
 import RestSpotMarker from '@/components/map/rest-spot-marker';
 import TrailEndpointMarker from '@/components/map/trail-endpoint-marker';
 import { ThemedText } from '@/components/themed-text';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/states';
 import { MAP_PROVIDER, SUPPORTS_HEATMAP } from '@/constants/maps';
+import { BROWSE_SNAPS, TRAIL_SNAPS, useMapChromeInsets } from '@/constants/map-layout';
+import { SUPPORTS_HEATMAP as HEATMAP_OK } from '@/constants/maps';
 import { Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useCreateZone } from '@/hooks/mutations/use-create-zone';
@@ -46,6 +53,7 @@ import { useUpdateZoneShape } from '@/hooks/mutations/use-update-zone-shape';
 import { useAnimalPositions } from '@/hooks/queries/use-animal-positions';
 import { useFarm } from '@/hooks/queries/use-farm';
 import { useRecentAnimals } from '@/hooks/queries/use-recent-animals';
+import { useMapType } from '@/hooks/use-map-type';
 import { useAnimalTrack } from '@/hooks/queries/use-animal-track';
 import { useGrazingHeatmap } from '@/hooks/queries/use-grazing-heatmap';
 import { useHomeRange } from '@/hooks/queries/use-home-range';
@@ -59,7 +67,8 @@ import { activityColor, toActivitySegments } from '@/utils/track-display';
 // Used when /farm is unavailable so the map still renders. Matches the seeded farm.
 const FALLBACK_FARM_CENTER = { lat: 13.4168, lng: 75.2588 };
 
-const VALID_LAYERS: MapLayer[] = ['live', 'trail', 'graze', 'range', 'signal'];
+const VALID_LAYERS = ['live', 'trail', 'graze', 'range', 'signal'] as const;
+type LegacyLayer = (typeof VALID_LAYERS)[number];
 
 export default function MapScreen() {
   const queryClient = useQueryClient();
@@ -81,13 +90,31 @@ export default function MapScreen() {
   const updateZoneShapeMutation = useUpdateZoneShape();
   const [selectedAnimalId, setSelectedAnimalId] = useState<string | null>(null);
   const [draftPoints, setDraftPoints] = useState<GeofencePoint[]>([]);
-  const [nameModalVisible, setNameModalVisible] = useState(false);
+  const zoneNameSheetRef = useRef<ZoneNameSheetHandle>(null);
   const [zoneName, setZoneName] = useState('');
 
   // ---- Trail layer -------------------------------------------------------
-  const [layer, setLayer] = useState<MapLayer>(
-    VALID_LAYERS.includes(layerParam as MapLayer) ? (layerParam as MapLayer) : 'live',
+  const [layer, setLayer] = useState<LegacyLayer>(
+    VALID_LAYERS.includes(layerParam as LegacyLayer) ? (layerParam as LegacyLayer) : 'live',
   );
+  const isDraftMode = Boolean(editZoneId || createZone === 'true');
+
+  // A zone draft and the trail console are both zIndex 5, and the draft is declared
+  // first, so together they hide the draft's own Cancel/Save and it becomes
+  // impossible to exit. Draft wins; the trail layer stands down. Derived here rather
+  // than at render time so the trail query does not fire for a layer we will not show.
+  const effectiveLayer: LegacyLayer = isDraftMode && layer === 'trail' ? 'live' : layer;
+
+  const chrome = useMapChromeInsets();
+  const sheetRef = useRef<MapSheetHandle>(null);
+  const layersSheetRef = useRef<LayersSheetHandle>(null);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [mapAreaHeight, setMapAreaHeight] = useState(0);
+  const [trailPrompt, setTrailPrompt] = useState<string | undefined>();
+  const { mapType, setMapType } = useMapType();
+  const sheetPosition = useSharedValue(0);
+  const [sheetIndex, setSheetIndex] = useState(0);
+
   const [trailRange, setTrailRange] = useState<TrailRange>('today');
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -107,14 +134,52 @@ export default function MapScreen() {
   const { data: track, isLoading: trailLoading } = useAnimalTrack(
     selectedAnimalId ?? undefined,
     trailWindow,
-    layer === 'trail',
+    effectiveLayer === 'trail',
   );
 
   // Each layer fetches only while it is the visible one.
-  const { data: restSpots } = useRestSpots(selectedAnimalId ?? undefined, 7, layer === 'trail');
-  const { data: heatmap } = useGrazingHeatmap({}, layer === 'graze' && SUPPORTS_HEATMAP);
-  const { data: homeRange } = useHomeRange(selectedAnimalId ?? undefined, '30d', layer === 'range');
-  const { data: coverage } = useLoraCoverage(layer === 'signal');
+  const { data: restSpots } = useRestSpots(selectedAnimalId ?? undefined, 7, effectiveLayer === 'trail');
+  const { data: heatmap } = useGrazingHeatmap({}, effectiveLayer === 'graze' && SUPPORTS_HEATMAP);
+  const { data: homeRange } = useHomeRange(selectedAnimalId ?? undefined, '30d', effectiveLayer === 'range');
+  const { data: coverage } = useLoraCoverage(effectiveLayer === 'signal');
+
+  // The legend lives inside the sheet now, not as a floating card. That removes the
+  // 361x76 transparent overlay that used to sit between the rail and the map.
+  const activeLegend = useMemo(() => {
+    if (effectiveLayer === 'graze' && heatmap) {
+      return {
+        title: 'Grazing density',
+        detail: `${heatmap.totalCells} patches · ${heatmap.from === heatmap.to ? 'today' : `${heatmap.from} to ${heatmap.to}`}`,
+        entries: [
+          { color: '#22C55E', label: 'less' },
+          { color: '#EAB308', label: 'more' },
+          { color: '#EF4444', label: 'most' },
+        ],
+      };
+    }
+    if (effectiveLayer === 'range' && homeRange) {
+      return {
+        title: 'Home range',
+        detail: `${homeRange.areaHectares} ha used · ${homeRange.coreAreaHectares} ha core`,
+        entries: [
+          { color: 'rgba(37,99,235,0.35)', label: 'full range' },
+          { color: 'rgba(37,99,235,0.8)', label: 'core 50%' },
+        ],
+      };
+    }
+    if (effectiveLayer === 'signal' && coverage) {
+      return {
+        title: 'LoRa coverage',
+        detail: `${coverage.cells.length} cells · ${coverage.cellMeters}m grid`,
+        entries: [
+          { color: 'rgba(34,197,94,0.8)', label: `good ≥${coverage.gradeThresholds.good}` },
+          { color: 'rgba(245,158,11,0.8)', label: `fair ≥${coverage.gradeThresholds.fair}` },
+          { color: 'rgba(239,68,68,0.8)', label: 'weak' },
+        ],
+      };
+    }
+    return null;
+  }, [effectiveLayer, heatmap, homeRange, coverage]);
 
   const trailSegments = useMemo(
     () => (track ? toActivitySegments(track.points) : []),
@@ -147,13 +212,13 @@ export default function MapScreen() {
 
   // Frame the whole path when it loads, so the trail is never off-screen.
   useEffect(() => {
-    if (layer !== 'trail' || !track?.points.length || !mapRef.current) return;
+    if (effectiveLayer !== 'trail' || !track?.points.length || !mapRef.current) return;
 
     mapRef.current.fitToCoordinates(
       track.points.map((p) => ({ latitude: p.lat, longitude: p.lng })),
       { edgePadding: { top: 120, right: 60, bottom: 320, left: 60 }, animated: true },
     );
-  }, [layer, track]);
+  }, [effectiveLayer, track]);
 
   const closeTrail = useCallback(() => {
     setLayer('live');
@@ -195,6 +260,7 @@ export default function MapScreen() {
       }
 
       setSelectedAnimalId(animal.id);
+      setTrailPrompt(undefined);
       mapRef.current?.animateToRegion(
         {
           latitude: position.lat,
@@ -215,7 +281,10 @@ export default function MapScreen() {
   const handleCancelDraft = useCallback(() => {
     setDraftPoints([]);
     setZoneName('');
-    router.replace('/zones' as never);
+    // Without clearing these the (tabs) route entry keeps ?createZone=true, so
+    // re-selecting the Map tab later drops straight back into draft mode.
+    router.setParams({ createZone: undefined, editZoneId: undefined });
+    router.replace('/zones');
   }, [router]);
 
   const handleSaveEdit = useCallback(() => {
@@ -225,7 +294,12 @@ export default function MapScreen() {
 
     updateZoneShapeMutation.mutate(
       { id: editZoneId, points: draftPoints },
-      { onSuccess: () => router.replace('/zones' as never) },
+      {
+        onSuccess: () => {
+          router.setParams({ createZone: undefined, editZoneId: undefined });
+          router.replace('/zones');
+        },
+      },
     );
   }, [draftPoints, editZoneId, router, updateZoneShapeMutation]);
 
@@ -236,7 +310,12 @@ export default function MapScreen() {
 
     createZoneMutation.mutate(
       { name: zoneName.trim(), points: draftPoints },
-      { onSuccess: () => router.replace('/zones' as never) },
+      {
+        onSuccess: () => {
+          router.setParams({ createZone: undefined, editZoneId: undefined });
+          router.replace('/zones');
+        },
+      },
     );
   }, [createZoneMutation, draftPoints, router, zoneName]);
 
@@ -266,9 +345,21 @@ export default function MapScreen() {
     if (createZone !== 'true' && !editZoneId) {
       setDraftPoints([]);
       setZoneName('');
-      setNameModalVisible(false);
+      zoneNameSheetRef.current?.dismiss();
     }
   }, [createZone, editZoneId]);
+
+  // Apply ?layer= once, then clear it. Reading it in a useState initializer meant
+  // deep links were ignored on an already-mounted tab; clearing it is what makes
+  // re-application idempotent.
+  useEffect(() => {
+    if (!layerParam) return;
+
+    if (VALID_LAYERS.includes(layerParam as LegacyLayer)) {
+      setLayer(layerParam as LegacyLayer);
+    }
+    router.setParams({ layer: undefined });
+  }, [layerParam, router]);
 
   useEffect(() => {
     if (!focusAnimalId || !positions?.length) {
@@ -283,6 +374,10 @@ export default function MapScreen() {
     }
 
     setSelectedAnimalId(targetId);
+    // Consume the param: this effect depends on `positions`, which refetches on a
+    // 30s staleTime, so without clearing it the camera snaps back every refetch and
+    // undoes the user's pan.
+    router.setParams({ focusAnimalId: undefined });
     mapRef.current?.animateToRegion(
       {
         latitude: targetPosition.lat,
@@ -292,7 +387,7 @@ export default function MapScreen() {
       },
       400,
     );
-  }, [focusAnimalId, positions]);
+  }, [focusAnimalId, positions, router]);
 
   useEffect(() => {
     if (!focusZoneId || !zones.length) {
@@ -313,6 +408,7 @@ export default function MapScreen() {
     const minLng = Math.min(...longitudes);
     const maxLng = Math.max(...longitudes);
 
+    router.setParams({ focusZoneId: undefined });
     mapRef.current?.animateToRegion(
       {
         latitude: (minLat + maxLat) / 2,
@@ -322,7 +418,7 @@ export default function MapScreen() {
       },
       400,
     );
-  }, [focusZoneId, zones]);
+  }, [focusZoneId, zones, router]);
 
   if (positionsLoading) {
     return (
@@ -344,7 +440,6 @@ export default function MapScreen() {
     );
   }
 
-  const isDraftMode = Boolean(editZoneId || createZone === 'true');
   const canSaveCreate = draftPoints.length >= 3;
 
   if (Platform.OS === 'web') {
@@ -361,12 +456,16 @@ export default function MapScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      onLayout={(event) => setMapAreaHeight(event.nativeEvent.layout.height)}
+    >
+      <StatusBar style="light" />
       <MapView
         ref={mapRef}
         provider={MAP_PROVIDER}
         style={styles.map}
-        mapType="satellite"
+        mapType={mapType}
         initialRegion={initialRegion}
         onPress={(event: any) => {
           if (createZone !== 'true') {
@@ -462,7 +561,7 @@ export default function MapScreen() {
 
         {/* Trail: one Polyline per activity run, so the path itself shows what the
             animal was doing rather than needing a legend. */}
-        {layer === 'trail' && trailSegments.map((segment, index) => (
+        {effectiveLayer === 'trail' && trailSegments.map((segment, index) => (
           <Polyline
             key={`trail-${index}`}
             coordinates={segment.points.map((p) => ({ latitude: p.lat, longitude: p.lng }))}
@@ -472,7 +571,7 @@ export default function MapScreen() {
           />
         ))}
 
-        {layer === 'trail' && track && track.points.length > 1 ? (
+        {effectiveLayer === 'trail' && track && track.points.length > 1 ? (
           <>
             <TrailEndpointMarker lat={track.points[0].lat} lng={track.points[0].lng} kind="start" />
             <TrailEndpointMarker
@@ -492,11 +591,11 @@ export default function MapScreen() {
 
         {/* Rest spots ride inside the trail rather than hiding behind another
             toggle: where the animal stopped is part of where it went. */}
-        {layer === 'trail' && restSpots?.spots.map((spot) => (
+        {effectiveLayer === 'trail' && restSpots?.spots.map((spot) => (
           <RestSpotMarker key={spot.id} spot={spot} />
         ))}
 
-        {layer === 'graze' && SUPPORTS_HEATMAP && heatmap && heatmap.points.length > 0 ? (
+        {effectiveLayer === 'graze' && SUPPORTS_HEATMAP && heatmap && heatmap.points.length > 0 ? (
           <Heatmap
             points={heatmap.points.map((p) => ({
               latitude: p.lat,
@@ -513,7 +612,7 @@ export default function MapScreen() {
           />
         ) : null}
 
-        {layer === 'range' && homeRange && homeRange.hull.length >= 3 ? (
+        {effectiveLayer === 'range' && homeRange && homeRange.hull.length >= 3 ? (
           <>
             <Polygon
               coordinates={homeRange.hull.map((p) => ({ latitude: p.lat, longitude: p.lng }))}
@@ -537,164 +636,172 @@ export default function MapScreen() {
           </>
         ) : null}
 
-        {layer === 'signal' && coverage ? <CoverageGrid coverage={coverage} /> : null}
+        {effectiveLayer === 'signal' && coverage ? <CoverageGrid coverage={coverage} /> : null}
 
         {/* Live markers are the base layer; hidden while a trail is on screen so
             the path stays readable. */}
-        {layer !== 'trail' && positions?.map((position) => (
+        {effectiveLayer !== 'trail' && positions?.map((position) => (
           <AnimalMarker key={position.animalId} position={position} onPress={() => setSelectedAnimalId(position.animalId)} />
         ))}
-        {layer !== 'trail' && selectedPosition && selectedAnimal ? (
+        {effectiveLayer !== 'trail' && selectedPosition && selectedAnimal ? (
           <Marker coordinate={{ latitude: selectedPosition.lat, longitude: selectedPosition.lng }} anchor={{ x: 0.5, y: 1 }}>
             <AnimalCallout animal={selectedAnimal} position={selectedPosition} />
           </Marker>
         ) : null}
       </MapView>
 
-      {farm ? (
-        <FarmHeaderPill name={farm.name} onlineCount={farm.onlineCount} totalCount={farm.totalCount} />
+      {isDraftMode ? (
+        <MapContextBar
+          title={editZoneId ? 'Editing fence' : 'New fence'}
+          subtitle={`${draftPoints.length} ${draftPoints.length === 1 ? 'point' : 'points'}`}
+          onExit={handleCancelDraft}
+          exitLabel="Cancel drawing"
+          exitIcon="close"
+        />
+      ) : effectiveLayer === 'trail' ? (
+        <MapContextBar
+          title={track?.animalName ?? selectedAnimal?.name ?? 'Trail'}
+          subtitle={trailRange === '7d' ? 'Last 7 days' : trailRange === 'yesterday' ? 'Yesterday' : 'Today'}
+          onExit={closeTrail}
+          exitLabel="Close trail"
+        />
+      ) : farm ? (
+        <MapContextBar
+          title={farm.name}
+          subtitle={`${farm.onlineCount}/${farm.totalCount} online`}
+          showStatusDot
+        />
       ) : null}
 
-      <View style={styles.actionStack}>
-        <MapActionButton icon="crosshair" onPress={handleRecenter} accessibilityLabel="Recenter map" />
-        <MapActionButton icon="refresh" onPress={handleRefresh} accessibilityLabel="Refresh positions" />
-        <MapActionButton icon="fence" onPress={() => router.push('/zones')} accessibilityLabel="Manage fences" />
-      </View>
+      {mapAreaHeight > 0 ? (
+      <MapControlRail
+        items={
+          isDraftMode
+            ? [{ icon: 'crosshair', onPress: handleRecenter, accessibilityLabel: 'Recenter map' }]
+            : [
+                {
+                  icon: 'layers',
+                  onPress: () => {
+                    setLayersOpen(true);
+                    layersSheetRef.current?.present();
+                  },
+                  accessibilityLabel: 'Map layers',
+                  active: layersOpen,
+                },
+                { icon: 'crosshair', onPress: handleRecenter, accessibilityLabel: 'Recenter map' },
+                { icon: 'refresh', onPress: handleRefresh, accessibilityLabel: 'Refresh positions' },
+                { icon: 'fence', onPress: () => router.push('/zones'), accessibilityLabel: 'Manage fences' },
+              ]
+        }
+        sheetPosition={sheetPosition}
+        containerHeight={mapAreaHeight - chrome.sheetTopInset}
+        contextTop={chrome.contextTop}
+        interactive={sheetIndex === 0}
+      />
+      ) : null}
 
       {isDraftMode ? (
-        <View style={styles.draftActions}>
-          {createZone === 'true' ? (
-            <>
-              <Button
-                variant="secondary"
-                label="Undo last point"
-                disabled={draftPoints.length === 0}
-                onPress={() => setDraftPoints((current) => current.slice(0, -1))}
-                style={styles.flexButton}
-              />
-              <Button
-                label="Name & Save"
-                disabled={!canSaveCreate}
-                loading={createZoneMutation.isPending}
-                onPress={() => setNameModalVisible(true)}
-                style={styles.flexButton}
-              />
-            </>
-          ) : (
-            <>
-              <Button
-                variant="secondary"
-                label="Cancel"
-                onPress={handleCancelDraft}
-                style={styles.flexButton}
-              />
-              <Button
-                label="Save"
-                loading={updateZoneShapeMutation.isPending}
-                onPress={handleSaveEdit}
-                style={styles.flexButton}
-              />
-            </>
-          )}
-          {createZone === 'true' ? (
-            <Button
-              variant="secondary"
-              label="Cancel"
-              onPress={handleCancelDraft}
-              style={styles.flexButton}
-            />
-          ) : null}
-        </View>
-      ) : null}
-
-      <Modal visible={nameModalVisible} transparent animationType="slide">
-        <View style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]}>
-          <Card variant="elevated" padding="xl" radius="xl" style={styles.modalCard}>
-            <ThemedText type="heading">Name this zone</ThemedText>
-            <Input value={zoneName} onChangeText={setZoneName} placeholder="Zone name" autoFocus />
-            <View style={styles.modalActions}>
-              <Button variant="secondary" label="Cancel" onPress={() => setNameModalVisible(false)} />
-              <Button
-                label="Save"
-                disabled={!zoneName.trim()}
-                loading={createZoneMutation.isPending}
-                onPress={() => {
-                  setNameModalVisible(false);
-                  handleSaveCreate();
-                }}
-              />
-            </View>
-          </Card>
-        </View>
-      </Modal>
-
-      {!isDraftMode && layer !== 'live' && layer !== 'trail' ? (
-        <View style={styles.legendWrap}>
-          {layer === 'graze' && heatmap ? (
-            <LayerLegend
-              title="Grazing density"
-              detail={`${heatmap.totalCells} patches · ${heatmap.from === heatmap.to ? 'today' : `${heatmap.from} to ${heatmap.to}`}`}
-              entries={[
-                { color: '#22C55E', label: 'less' },
-                { color: '#EAB308', label: 'more' },
-                { color: '#EF4444', label: 'most' },
-              ]}
-            />
-          ) : null}
-          {layer === 'range' && homeRange ? (
-            <LayerLegend
-              title="Home range"
-              detail={`${homeRange.areaHectares} ha used · ${homeRange.coreAreaHectares} ha core`}
-              entries={[
-                { color: 'rgba(37,99,235,0.35)', label: 'full range' },
-                { color: 'rgba(37,99,235,0.8)', label: 'core 50%' },
-              ]}
-            />
-          ) : null}
-          {layer === 'signal' && coverage ? (
-            <LayerLegend
-              title="LoRa coverage"
-              detail={`${coverage.cells.length} cells · ${coverage.cellMeters}m grid`}
-              entries={[
-                { color: 'rgba(34,197,94,0.8)', label: `good ≥${coverage.gradeThresholds.good}` },
-                { color: 'rgba(245,158,11,0.8)', label: `fair ≥${coverage.gradeThresholds.fair}` },
-                { color: 'rgba(239,68,68,0.8)', label: 'weak' },
-              ]}
-            />
-          ) : null}
-        </View>
-      ) : null}
-
-      {!isDraftMode ? (
-        <View style={styles.layerRail}>
-          <MapLayerToggle
-            value={layer}
-            onChange={setLayer}
-            disabled={SUPPORTS_HEATMAP ? [] : ['graze']}
-          />
-        </View>
-      ) : null}
-
-      {layer === 'trail' && track ? (
-        <TrailControls
-          track={track}
-          range={trailRange}
-          onRangeChange={setTrailRange}
-          cursor={cursor}
-          onCursorChange={setCursor}
-          playing={playing}
-          onTogglePlay={() => setPlaying((v) => !v)}
-          speed={speed}
-          onSpeedChange={setSpeed}
-          onClose={closeTrail}
+        <DraftToolbar
+          op={editZoneId ? 'edit' : 'create'}
+          pointCount={draftPoints.length}
+          canSave={editZoneId ? draftPoints.length >= 3 : canSaveCreate}
+          saving={createZoneMutation.isPending || updateZoneShapeMutation.isPending}
+          onUndo={() => setDraftPoints((current) => current.slice(0, -1))}
+          onCancel={handleCancelDraft}
+          onSave={() => {
+            if (editZoneId) handleSaveEdit();
+            else zoneNameSheetRef.current?.present();
+          }}
         />
-      ) : layer === 'trail' && trailLoading ? (
-        <View style={styles.trailLoading}>
-          <LoadingState size="sm" label="Loading trail" />
-        </View>
-      ) : layer !== 'trail' ? (
-        <AllAnimalsSheet animals={recentAnimals} onSelect={handleSelectAnimal} />
       ) : null}
+
+      <LayersSheet
+        ref={layersSheetRef}
+        layer={(effectiveLayer === 'trail' ? 'live' : effectiveLayer) as MapDataLayer}
+        mapType={mapType}
+        trailActive={effectiveLayer === 'trail'}
+        onSelectLayer={(next) => setLayer(next)}
+        onSelectTrail={() => {
+          const subject = selectedAnimalId ?? recentAnimals[0]?.id ?? null;
+          if (subject) {
+            setSelectedAnimalId(subject);
+            setTrailPrompt(undefined);
+            setLayer('trail');
+            return;
+          }
+          // No candidate: stay in browse, open the picker and say why, rather than
+          // rendering an empty trail with nothing to choose from.
+          setTrailPrompt('Pick an animal to see its trail');
+          sheetRef.current?.snapToIndex(1);
+        }}
+        onSelectMapType={setMapType}
+        onDismiss={() => setLayersOpen(false)}
+      />
+
+      <ZoneNameSheet
+        ref={zoneNameSheetRef}
+        value={zoneName}
+        onChange={setZoneName}
+        saving={createZoneMutation.isPending}
+        onSave={() => {
+          zoneNameSheetRef.current?.dismiss();
+          handleSaveCreate();
+        }}
+      />
+
+      {effectiveLayer === 'trail' ? (
+        <MapSheet
+          ref={sheetRef}
+          snapPoints={TRAIL_SNAPS}
+          topInset={chrome.sheetTopInset}
+          animatedPosition={sheetPosition}
+          onIndexChange={setSheetIndex}
+          // The trail sheet hosts a Slider and a chip row and has no scrollable at
+          // the lower detents, so content panning only fights them. Handle drag and
+          // the tappable header still change detent.
+          enableContentPanning={false}
+        >
+          {track ? (
+            <TrailSheetContent
+              track={track}
+              range={trailRange}
+              onRangeChange={setTrailRange}
+              cursor={cursor}
+              onCursorChange={setCursor}
+              playing={playing}
+              onTogglePlay={() => setPlaying((v) => !v)}
+              speed={speed}
+              onSpeedChange={setSpeed}
+              detent={sheetIndex}
+              onToggleDetent={() => sheetRef.current?.snapToIndex(sheetIndex > 0 ? 0 : 1)}
+            />
+          ) : (
+            // Loading is sheet CONTENT now, not a transparent sibling overlay — so
+            // there is nothing left to swallow map gestures while a trail fetches.
+            <LoadingState size="sm" label="Loading trail" />
+          )}
+        </MapSheet>
+      ) : (
+        <MapSheet
+          ref={sheetRef}
+          snapPoints={BROWSE_SNAPS}
+          topInset={chrome.sheetTopInset}
+          animatedPosition={sheetPosition}
+          onIndexChange={setSheetIndex}
+        >
+          <BrowseSheetContent
+            animals={recentAnimals}
+            detent={sheetIndex}
+            selectedAnimalId={selectedAnimalId}
+            onSelect={handleSelectAnimal}
+            onToggleDetent={() => sheetRef.current?.snapToIndex(sheetIndex > 0 ? 0 : 1)}
+            onlineCount={farm?.onlineCount ?? 0}
+            totalCount={farm?.totalCount ?? recentAnimals.length}
+            legend={activeLegend ? <LayerLegend {...activeLegend} compact /> : undefined}
+            prompt={trailPrompt}
+          />
+        </MapSheet>
+      )}
     </View>
   );
 }
@@ -715,69 +822,11 @@ const styles = StyleSheet.create({
   centerText: {
     textAlign: 'center',
   },
-  actionStack: {
-    position: 'absolute',
-    right: Space.lg,
-    top: 96,
-    zIndex: 3,
-  },
-  draftActions: {
-    position: 'absolute',
-    left: Space.lg,
-    right: Space.lg,
-    bottom: 104,
-    zIndex: 5,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Space.md,
-  },
-  flexButton: {
-    flex: 1,
-  },
-  layerRail: {
-    position: 'absolute',
-    left: Space.lg,
-    right: Space.lg,
-    bottom: 150,
-    alignItems: 'center',
-    zIndex: 4,
-  },
-  legendWrap: {
-    position: 'absolute',
-    left: Space.lg,
-    right: Space.lg,
-    bottom: 210,
-    zIndex: 4,
-  },
   coreCell: {
     width: 14,
     height: 14,
     borderRadius: 3,
     backgroundColor: 'rgba(37,99,235,0.55)',
-  },
-  trailLoading: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingBottom: 120,
-    zIndex: 5,
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: Space.xl,
-  },
-  modalCard: {
-    width: '100%',
-    maxWidth: 420,
-    gap: Space.md,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: Space.md,
   },
   vertexMarker: {
     width: 8,

@@ -19,3 +19,9 @@ export const MAP_PROVIDER = Platform.OS === 'android' ? 'google' : undefined;
  * grazing-density layer is unavailable wherever we fall back to Apple Maps.
  */
 export const SUPPORTS_HEATMAP = MAP_PROVIDER === 'google';
+
+/**
+ * Terrain is a Google Maps type. MKMapType has no equivalent, so on Apple Maps the
+ * third map-type option becomes 'hybrid' instead.
+ */
+export const SUPPORTS_TERRAIN = MAP_PROVIDER === 'google';

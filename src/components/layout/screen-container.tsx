@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BottomTabInset, Space } from '@/constants/theme';
+import { Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ScreenContainerProps = {
@@ -58,9 +58,10 @@ export default function ScreenContainer({
   const paddingTop = edges.includes('top') ? insets.top : 0;
   const paddingBottom =
     (edges.includes('bottom') ? insets.bottom : 0) +
-    // TODO: prefer useBottomTabBarHeight() once @react-navigation/bottom-tabs is an
-    // explicit dependency; BottomTabInset is only an approximation.
-    // (hasTabBar ? BottomTabInset : 0) +
+    // Deliberately zero. The tab bar is a flex SIBLING of the screen, so its space
+    // is already excluded from this container's height and adding it again would
+    // reserve it twice. `hasTabBar` is kept for call-site clarity but contributes
+    // nothing; see src/constants/map-layout.ts for the same rule stated in full.
     (hasFab ? 22 : Space['2xl']);
 
   const horizontal = padded ? Space['2xl'] : 0;

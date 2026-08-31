@@ -3,7 +3,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Icon, { type IconName } from '@/components/ui/icon';
 import { AppPressable } from '@/components/ui/pressable';
-import { BottomTabInset, Elevation, Radius, Space } from '@/constants/theme';
+import { Elevation, Radius, Space } from '@/constants/theme';
+import { useBottomTabInset } from '@/hooks/use-bottom-tab-inset';
 import { useTheme } from '@/hooks/use-theme';
 
 export type FabProps = {
@@ -25,6 +26,7 @@ export type FabProps = {
 export function Fab({ icon, onPress, accessibilityLabel, tone = 'brand', hasTabBar = false ,style   }: FabProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabInset();
 
   const background = tone === 'accent' ? theme.accent : theme.brand;
   const foreground = tone === 'accent' ? theme.accentText : theme.brandText;
@@ -38,7 +40,8 @@ export function Fab({ icon, onPress, accessibilityLabel, tone = 'brand', hasTabB
         styles.fab,
         {
           backgroundColor: background,
-          bottom: insets.bottom + (hasTabBar ? BottomTabInset : 0) + Space.lg,
+          // tabBarHeight already includes insets.bottom, so it must not be added twice.
+          bottom: (hasTabBar ? tabBarHeight : insets.bottom) + Space.lg,
         },
         style
       ]}

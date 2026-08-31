@@ -36,7 +36,9 @@ export type IconName =
   | 'sound'
   | 'play'
   | 'pause'
-  | 'route';
+  | 'route'
+  | 'layers'
+  | 'undo';
 
 type SymbolSpec = { ios: string; android: string; web: string };
 
@@ -50,7 +52,9 @@ const ICONS: Record<IconName, SymbolSpec> = {
   'chevron-down': { ios: 'chevron.down', android: 'expand_more', web: 'expand_more' },
   crosshair: { ios: 'location', android: 'my_location', web: 'my_location' },
   refresh: { ios: 'arrow.clockwise', android: 'refresh', web: 'refresh' },
-  fence: { ios: 'map', android: 'map', web: 'map' },
+  // Distinct from `map`: these two sat side by side in the control rail and were
+  // rendering the identical glyph.
+  fence: { ios: 'hexagon', android: 'fence', web: 'fence' },
   person: { ios: 'person', android: 'person', web: 'person' },
   speaker: { ios: 'speaker.wave.2', android: 'volume_up', web: 'volume_up' },
   volume: { ios: 'slider.horizontal.3', android: 'tune', web: 'tune' },
@@ -74,6 +78,8 @@ const ICONS: Record<IconName, SymbolSpec> = {
   play: { ios: 'play.fill', android: 'play_arrow', web: 'play_arrow' },
   pause: { ios: 'pause.fill', android: 'pause', web: 'pause' },
   route: { ios: 'point.topleft.down.curvedto.point.bottomright.up', android: 'route', web: 'route' },
+  layers: { ios: 'square.3.layers.3d.down.right', android: 'layers', web: 'layers' },
+  undo: { ios: 'arrow.uturn.backward', android: 'undo', web: 'undo' },
 };
 
 export type IconProps = {

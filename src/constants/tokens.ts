@@ -62,7 +62,10 @@ export const Duration = { fast: 120, base: 200 } as const;
 
 export const MaxContentWidth = 800;
 
-/** Fallback only, for screens outside the tab navigator. Prefer useBottomTabBarHeight(). */
+/**
+ * @deprecated Wrong on both platforms — the real height is `49 + insets.bottom`.
+ * Use `useBottomTabInset()` from '@/hooks/use-bottom-tab-inset' instead.
+ */
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 
 /**

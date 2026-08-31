@@ -1,11 +1,3 @@
-/** Collar activity codes, as emitted by the RA uplink protocol. */
-export const ACTIVITY = {
-  resting: 0,
-  walking: 1,
-  grazing: 2,
-  ruminating: 3,
-} as const;
-
 export type ActivityCode = 0 | 1 | 2 | 3;
 
 export interface TrackPoint {

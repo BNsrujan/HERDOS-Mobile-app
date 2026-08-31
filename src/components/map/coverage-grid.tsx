@@ -22,7 +22,7 @@ const GRADES = [
   { key: 'weak', fill: 'rgba(239,68,68,0.35)', stroke: 'rgba(239,68,68,0.8)' },
 ] as const;
 
-export function gradeOf(cell: CoverageCell, thresholds: { good: number; fair: number }) {
+function gradeOf(cell: CoverageCell, thresholds: { good: number; fair: number }) {
   if (cell.avgRssi === null) return GRADES[2];
   if (cell.avgRssi >= thresholds.good) return GRADES[0];
   if (cell.avgRssi >= thresholds.fair) return GRADES[1];

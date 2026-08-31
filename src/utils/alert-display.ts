@@ -37,7 +37,7 @@ const TYPE_PRESENTATION: Record<AlertType, { Icon: LucideIcon; color: string }> 
   low_battery: { Icon: BatteryLow, color: '#F59E0B' },
 };
 
-export function getAlertType(alert: HerdAlert): AlertType {
+function getAlertType(alert: HerdAlert): AlertType {
   return alert.type ?? 'panic';
 }
 

@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
-import IconSymbol from '@/components/ui/icon-symbol';
+import Icon from '@/components/ui/icon';
 import { AppPressable } from '@/components/ui/pressable';
 import { MinTouchTarget, Radius, Space } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -32,7 +32,7 @@ export default function ScreenHeader({ title, subtitle, back, right }: ScreenHea
             accessibilityLabel="Go back"
             style={[styles.backButton, { backgroundColor: theme.surfaceSunken }]}
           >
-            <IconSymbol name="chevron" size={18} color={theme.textPrimary} />
+            <Icon name="chevron" size={18} color={theme.textPrimary} />
           </AppPressable>
         ) : null}
 

@@ -24,10 +24,6 @@ export function activityColor(activity: ActivityCode | null) {
   return ACTIVITY_COLORS[activity === null ? 'unknown' : String(activity)];
 }
 
-export function activityLabel(activity: ActivityCode | null) {
-  return ACTIVITY_LABELS[activity === null ? 'unknown' : String(activity)];
-}
-
 /**
  * Split a path into runs of constant activity so each can be drawn as its own
  * coloured Polyline. Consecutive runs share a point, otherwise the line would

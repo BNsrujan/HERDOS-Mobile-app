@@ -27,7 +27,3 @@ export function getAlerts(params: { limit?: number; acknowledged?: boolean; anim
 export function resolveAlert(id: string) {
   return apiPatch<HerdAlert>(`/alerts/${id}/resolve`, { acknowledged: true });
 }
-
-export function acknowledgeAlert(id: string) {
-  return resolveAlert(id);
-}

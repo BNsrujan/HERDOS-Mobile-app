@@ -73,7 +73,3 @@ export function getRecentAnimals(limit?: number) {
 export function getAnimalPositions() {
   return apiGet<AnimalPosition[]>('/animals/positions');
 }
-
-export function acknowledgeAnimal(id: string) {
-  return apiPatch<Animal>(`/animals/${id}`, { acknowledged: true });
-}

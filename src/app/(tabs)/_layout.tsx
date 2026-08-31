@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
-import TabIcon from '@/components/ui/tab-icon';
+import Icon from '@/components/ui/icon';
 import { Colors } from '@/constants/theme';
 
 export default function TabsLayout() {
@@ -30,7 +30,7 @@ export default function TabsLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="home" color={focused ? activeColor : color} size={size} />
+            <Icon name="home" color={focused ? activeColor : color} size={size} />
           ),
         }}
       />
@@ -39,7 +39,7 @@ export default function TabsLayout() {
         options={{
           title: 'Herd',
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="herd" color={focused ? activeColor : color} size={size} />
+            <Icon name="herd" color={focused ? activeColor : color} size={size} />
           ),
         }}
       />
@@ -48,7 +48,7 @@ export default function TabsLayout() {
         options={{
           title: 'Map',
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="map" color={focused ? activeColor : color} size={size} />
+            <Icon name="map" color={focused ? activeColor : color} size={size} />
           ),
         }}
       />
@@ -57,7 +57,7 @@ export default function TabsLayout() {
         options={{
           title: 'Alerts',
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="alerts" color={focused ? activeColor : color} size={size} />
+            <Icon name="alerts" color={focused ? activeColor : color} size={size} />
           ),
         }}
       />
@@ -66,7 +66,7 @@ export default function TabsLayout() {
         options={{
           title: 'Settings',
           tabBarIcon: ({ color, size, focused }) => (
-            <TabIcon name="settings" color={focused ? activeColor : color} size={size} />
+            <Icon name="settings" color={focused ? activeColor : color} size={size} />
           ),
         }}
       />
